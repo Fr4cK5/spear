@@ -6,7 +6,7 @@ CoordMode("Mouse", "Screen")
 
 #Include v2d.v2.ahk
 #Include viewport.v2.ahk
-#Include strings.v2.ahk
+#include str.v2.ahk
 #Include vec.v2.ahk
 #Include result.v2.ahk
 #Include option.v2.ahk
@@ -177,10 +177,10 @@ is_match(item) {
     name := StrLower(item.filename)
     input := StrLower(item.input)
 
-    ; FIXME: Idk man, endsWith is bugged *shrug*
-    ; if Strings.char(input, StrLen(input)) == "$" {
-    ;     return Strings.endsWith(name, SubStr(input, 0, StrLen(input) - 1))
-    ; }
+    ; opt? Make $-Suffix search for suffixes instead of fuzzy
+    if Str.hasSuffix(input, "$") {
+        return Str.hasSuffix(name, Str.sub(input, , StrLen(input)).unwrap())
+    }
 
     if StrLen(input) > StrLen(name) {
         return false
@@ -198,13 +198,13 @@ is_match(item) {
     score := 1
 
     while i <= name_len and input_idx <= input_len {
-        if Strings.char(name, i) == Strings.char(input, input_idx) {
+        if Str.charUnsafe(name, i) == Str.charUnsafe(input, input_idx) {
             input_idx++
 
             ; opt? ignore whitespace in matching
             ; while ignore_whitespace and Strings.char...
             ; This don't quite work... somehow?
-            while Strings.char(input, input_idx) == " " {
+            while Str.char(input, input_idx) == " " {
                 input_idx++
             }
 
