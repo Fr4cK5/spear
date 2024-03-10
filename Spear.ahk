@@ -12,15 +12,19 @@ CoordMode("Mouse", "Screen")
 #Include option.v2.ahk
 #Include timer.v2.ahk
 #Include peep.v2.ahk
+#Include files.v2.ahk
 
 #Include FileHit.ahk
+
+TraySetIcon("./asset/spear-icon.ico")
 
 WIDTH := 800
 HEIGHT := 600
 PADDING := 20
 FONT_SIZE := 15
 
-window := Gui("+ToolWindow -Caption +AlwaysOnTop")
+; FIXME: Change to +AlwaysOnTop after debugging
+window := Gui("+ToolWindow -Caption -AlwaysOnTop")
 window.SetFont(Format("s{}", FONT_SIZE))
 
 INPUT_BOX_POS := PADDING
@@ -42,7 +46,7 @@ stats := window.AddText(Format("x{} y{} w{} h{}",
     STATS_Y,
     STATS_WIDTH,
     STATS_HEIGHT
-), Format("0/{}", 250)) ; opt? Max items at once
+), Format("0/{}", 250)) ; setting? Max items at once
 
 LIST_X := PADDING
 LIST_Y := PADDING * 2 + INPUT_BOX_HEIGHT
@@ -53,11 +57,12 @@ list := window.AddListView(Format("+Grid x{} y{} w{} h{}",
     LIST_Y,
     LIST_WIDTH,
     LIST_HEIGHT
-), ["Name", "Directory"])
+), ["Name", "Directory", "Type", "Score"])
 list.OnEvent("Click", handle_list_click)
 
-list.ModifyCol(1, LIST_WIDTH / 2 - PADDING / 2)
-list.ModifyCol(2, LIST_WIDTH / 2)
+list.ModifyCol(1, LIST_WIDTH / 3)
+list.ModifyCol(2, LIST_WIDTH / 2 - 5)
+list.ModifyCol(3, LIST_WIDTH / 6)
 
 PERF_X := PADDING
 PERF_Y := HEIGHT - PADDING * 2
@@ -66,10 +71,15 @@ perf := window.AddText(Format("x{} y{} w{}",
     PERF_X,
     PERF_Y,
     PERF_WIDTH
-), "Performance")
+), "")
 
-Esc::ExitApp()
+base_dir := "C:\.dev\*"
+
+cache_ready := false
+cache := Vec()
+
 ^#l::{
+    explorer_integration()
     show_centered(window, WIDTH, HEIGHT)
     input.Focus()
 }
@@ -84,15 +94,17 @@ Esc::ExitApp()
     find(input)
 }
 
-; Esc::hide_ui()
+Esc::hide_ui()
 
 hide_ui() {
     global
     window.Hide()
+
+    ; setting? Clear everything upon hiding
     while(list.Delete()) {
     }
     input.Value := ""
-    perf.Value := "Performance"
+    perf.Value := ""
 }
 
 show_centered(g, width, height) {
@@ -102,6 +114,38 @@ show_centered(g, width, height) {
         vp.halfY() - height / 2,
     )
     g.Show(Format("x{} y{} w{} h{}", pos.x, pos.y, width, height))
+}
+
+explorer_integration() {
+    ; setting? Explorer integration
+    if !WinActive("ahk_exe explorer.exe") {
+        ; setting? Automatically activate explorer to grab path
+        return
+    }
+
+    bak := A_Clipboard
+    Sleep(50)
+    SendEvent("^l^c")
+    Sleep(50)
+    set_base_dir(A_Clipboard)
+    Sleep(50)
+    A_Clipboard := bak
+}
+
+set_base_dir(path) {
+    global
+    temp := Str.replaceAll(path, "/", "\")
+    if !Str.hasSuffix(temp, "\") {
+        temp .= "\"
+    }
+
+    if !Str.hasSuffix(temp, "*") {
+        temp .= "*"
+    }
+
+    ToolTip(temp)
+
+    base_dir := temp
 }
 
 find(obj) {
@@ -118,31 +162,27 @@ find(obj) {
 
     files := Vec()
 
-    ; opt? Search type
-    loop files "C:\.dev\*", "DFR" {
+    ; setting? Search type
+    loop files base_dir, "DFR" {
 
         filename := A_LoopFileName
-        path := A_LoopFilePath
+        path := A_LoopFileFullPath
         if filename == path {
             path := "./"
         }
-
-        ; opt? Either show the last directory of the path
-        ; else {
-        ;     path := Strings.sub(path, Strings.lastIndex(path, "\") + 1)
+        ; setting? Either show the last directory of the path
+        ; if ... {
+        ;     path := Str.sub(path, Str.lastIndex(path, "\").unwrap() + 1).unwrap()
         ; }
 
-        ; opt... Or Show the full thing
-        ; if !Strings.startsWith(path, "./") and Strings.char(path, 2) != ":" {
-        ;     path := "./" . path
-        ; }
+        ; setting... Or Show the full thing
         path := StrReplace(path, "\", "/")
 
-        files.push(FileHit(filename, path, obj.Value))
+        files.push(FileHit(filename, path, A_LoopFileAttrib, obj.Value))
     }
 
     if files.len() == 0 {
-        perf.Value := "Performance"
+        perf.Value := ""
         return
     }
 
@@ -153,8 +193,8 @@ find(obj) {
         .sortInPlace((a, b) => a.score < b.score)
     
     limited := files
-        .limitInPlace(250) ; opt? Limit
-        .foreach((_, item) => list.Add(, item.filename, item.path))
+        .limitInPlace(250) ; setting? Limit
+        .foreach((_, item) => list.Add(, item.filename, item.path, get_pretty_mode(item.attr), item.score))
 
     hits := files.len()
     showing := limited.len()
@@ -173,13 +213,17 @@ find(obj) {
 }
 
 is_match(item) {
-    ; opt? Ignore case
+    ; setting? Ignore case
     name := StrLower(item.filename)
     input := StrLower(item.input)
 
-    ; opt? Make $-Suffix search for suffixes instead of fuzzy
+    ; setting? Make $-Suffix search for suffixes instead of fuzzy
     if Str.hasSuffix(input, "$") {
         return Str.hasSuffix(name, Str.sub(input, , StrLen(input)).unwrap())
+    }
+    ; setting? Make ?-Suffix evaluate containment instead of fuzzy searching
+    if Str.hasSuffix(input, "?") {
+        return Str.contains(name, Str.sub(input, , StrLen(input)).unwrap())
     }
 
     if StrLen(input) > StrLen(name) {
@@ -201,7 +245,7 @@ is_match(item) {
         if Str.charUnsafe(name, i) == Str.charUnsafe(input, input_idx) {
             input_idx++
 
-            ; opt? ignore whitespace in matching
+            ; setting? ignore whitespace in matching
             ; while ignore_whitespace and Strings.char...
             ; This don't quite work... somehow?
             while Str.char(input, input_idx) == " " {
@@ -235,11 +279,12 @@ is_match(item) {
 handle_list_click(obj, info) {
     name := list.GetText(info, 1)
     path := list.GetText(info, 2)
+    mode := list.GetText(info, 3)
 
     if GetKeyState("Control", "P") {
         path_parts := Vec.FromClone(StrSplit(path, "/"))
         working_dir := path_parts
-            .limit(path_parts.len() - 1)
+            .limit(path_parts.len() - (Str.hasPrefix(mode, "File") ? 1 : 0))
             .join("\")
         
         if working_dir.isNone() {
@@ -256,6 +301,24 @@ handle_list_click(obj, info) {
         A_Clipboard := path
     }
 
-    ; opt? Autohide after copy / explorer start
+    ; setting? Autohide after copy / explorer start
     hide_ui()
+}
+
+get_pretty_mode(mode) {
+
+    s := "Unknown"
+    if Files.file(mode) {
+        s := "File"
+    }
+    else if Files.directory(mode) {
+        s := "Dir"
+    }
+
+    if Files.link(mode) {
+        s .= "/Link"
+    }
+
+    return s
+
 }
