@@ -11,8 +11,8 @@ CoordMode("Mouse", "Screen")
 #Include result.v2.ahk
 #Include option.v2.ahk
 #Include timer.v2.ahk
-#Include peep.v2.ahk
 #Include files.v2.ahk
+#Include jsongo.v2.ahk
 
 #Include FileHit.ahk
 
@@ -20,6 +20,7 @@ TraySetIcon("./asset/spear-icon.ico")
 
 ; WE DEBUGGING
 
+; #Include peep.v2.ahk
 ; #Include logger.v2.ahk
 ; lg := Logger(, true)
 ; Esc::ExitApp()
@@ -83,6 +84,8 @@ perf := window.AddText(Format("x{} y{} w{}",
 
 base_dir := "C:\.dev\*"
 
+settings := load_settings()
+
 cache := Vec()
 cache_ready := false
 SetTimer(() => fill_cache(), -1, 0x7fffffff)
@@ -111,10 +114,12 @@ hide_ui() {
     window.Hide()
 
     ; setting? Clear everything upon hiding
-    while(list.Delete()) {
+    if settings.autoclear {
+        while (list.Delete()) {
+        }
+        input.Value := ""
+        perf.Value := ""
     }
-    input.Value := ""
-    perf.Value := ""
 }
 
 show_centered(g, width, height) {
@@ -128,8 +133,12 @@ show_centered(g, width, height) {
 
 explorer_integration() {
     ; setting? Explorer integration
-    if !WinActive("ahk_exe explorer.exe") {
-        ; setting? Automatically activate explorer to grab path
+    if !settings.integrations.explorer {
+        return
+    }
+
+    handle := WinActive("ahk_exe explorer.exe ahk_class CabinetWClass")
+    if !handle {
         return
     }
 
@@ -140,6 +149,40 @@ explorer_integration() {
     set_base_dir(A_Clipboard)
     Sleep(50)
     A_Clipboard := bak
+}
+
+load_settings() {
+    user_path_parts := Vec.FromShared(StrSplit(A_MyDocuments, "\"))
+    user_path := user_path_parts
+        .limit(user_path_parts.len() - 1)
+        .join("\")
+        .unwrap()
+
+    settings := {}
+    try {
+        settings_content := FileRead(Format("{}\.config\spear\config.json", user_path))
+        settings := jsongo.Parse(settings_content)
+    }
+    catch {
+        settings_content := FileRead(Format("{}\.config\spear\config_default.json", user_path))
+        settings := jsongo.Parse(settings_content)
+    }
+
+    ; For the sake of autocomplete!
+    return {
+        listviewlimit: settings["listviewlimit"],
+        showfulldir: settings["showfulldir"], 
+        autoclear: settings["autoclear"], 
+        dollarsuffixisendswith: settings["dollarsuffixisendswith"], 
+        qmsuffixiscontains: settings["qmsuffixiscontains"], 
+        ignorewhitespace: settings["ignorewhitespace"], 
+        hideafteruiinteraction: settings["hideafteruiinteraction"], 
+        matchignorecase: settings["matchignorecase"], 
+        integrations: {
+            explorer: settings["integrations"]["explorer"], 
+            editcmd: settings["integrations"]["editcmd"],
+        },
+    }
 }
 
 set_base_dir(path) {
@@ -158,7 +201,6 @@ set_base_dir(path) {
     SetTimer(() => fill_cache(), -1, 0x7fffffff)
 }
 
-
 fill_cache() {
     global
 
@@ -173,12 +215,13 @@ fill_cache() {
             path := "./"
         }
         ; setting? Either show the last directory of the path
-        ; if ... {
-        ;     path := Str.sub(path, Str.lastIndex(path, "\").unwrap() + 1).unwrap()
-        ; }
-
+        if !settings.showfulldir {
+            path := Str.sub(path, Str.lastIndex(path, "\").unwrap() + 1).unwrap()
+        }
         ; setting... Or Show the full thing
-        path := StrReplace(path, "\", "/")
+        else {
+            path := StrReplace(path, "\", "/")
+        }
 
         cache.push(FileHit(filename, path, A_LoopFileAttrib))
     }
@@ -220,7 +263,7 @@ find(obj) {
         .sort((a, b) => a.score < b.score)
     
     limited := hit_list
-        .limit(250) ; setting? Limit
+        .limit(settings.listviewlimit) ; setting? Limit
         .foreach((_, item) => list.Add(, item.filename, item.path, get_pretty_mode(item.attr), item.score))
 
     hits := hit_list.len()
@@ -241,16 +284,21 @@ find(obj) {
 is_match(item) {
     global
 
+    name := item.filename
+    input_str := input.Value
+
     ; setting? Ignore case
-    name := StrLower(item.filename)
-    input_str := StrLower(input.Value)
+    if settings.matchignorecase {
+        name := StrLower(name)
+        input_str := StrLower(input_str)
+    }
 
     ; setting? Make $-Suffix search for suffixes instead of fuzzy
-    if Str.hasSuffix(input_str, "$") {
+    if settings.dollarsuffixisendswith and Str.hasSuffix(input_str, "$") {
         return Str.hasSuffix(name, Str.sub(input_str, , StrLen(input_str)).unwrap())
     }
     ; setting? Make ?-Suffix evaluate containment instead of fuzzy searching
-    if Str.hasSuffix(input_str, "?") {
+    if settings.qmsuffixiscontains and Str.hasSuffix(input_str, "?") {
         return Str.contains(name, Str.sub(input_str, , StrLen(input_str)).unwrap())
     }
 
@@ -274,8 +322,7 @@ is_match(item) {
             input_idx++
 
             ; setting? ignore whitespace in matching
-            ; while ignore_whitespace && ... { }
-            while input_idx <= StrLen(input_str) and Str.charUnsafe(input_str, input_idx) == " " {
+            while settings.ignorewhitespace input_idx <= StrLen(input_str) and Str.charUnsafe(input_str, input_idx) == " " {
                 input_idx++
             }
 
@@ -308,8 +355,8 @@ handle_list_click(obj, info) {
     path := list.GetText(info, 2)
     mode := list.GetText(info, 3)
 
+    path_parts := Vec.FromClone(StrSplit(path, "/"))
     if GetKeyState("Control", "P") {
-        path_parts := Vec.FromClone(StrSplit(path, "/"))
         working_dir := path_parts
             .limit(path_parts.len() - (Str.hasPrefix(mode, "File") ? 1 : 0))
             .join("\")
@@ -320,6 +367,9 @@ handle_list_click(obj, info) {
 
         Run(Format("explorer {}", working_dir.unwrap()))
     }
+    else if GetKeyState("LAlt", "P") {
+        Run(Format(settings.integrations.editcmd, path))
+    }
 
     if GetKeyState("LAlt", "P") {
         A_Clipboard := name
@@ -329,7 +379,9 @@ handle_list_click(obj, info) {
     }
 
     ; setting? Autohide after copy / explorer start
-    hide_ui()
+    if settings.hideafteruiinteraction {
+        hide_ui()
+    }
 }
 
 get_pretty_mode(mode) {
@@ -346,4 +398,14 @@ get_pretty_mode(mode) {
     }
 
     return s
+}
+
+anySuffix(s, targets*) {
+    for t in targets {
+        if Str.hasSuffix(s, t) {
+            return true
+        }
+    }
+
+    return false
 }

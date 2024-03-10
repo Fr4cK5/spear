@@ -1,0 +1,14 @@
+{
+    "autoclear": false,
+    "integrations": {
+        "explorer": true,
+        "editcmd": "notepad {}"
+    },
+    "showfulldir": true,
+    "listviewlimit": 250,
+    "matchignorecase": true,
+    "dollarsuffixisendswith": true,
+    "qmsuffixiscontains": true,
+    "ignorewhitespace": true,
+    "hideafteruiinteraction": true
+}
