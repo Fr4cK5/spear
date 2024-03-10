@@ -45,6 +45,15 @@ input := window.AddEdit(Format("x{} y{} w{} h{}",
     INPUT_BOX_WIDTH,
     INPUT_BOX_HEIGHT
 ))
+input.OnEvent("Change", auto_update_list)
+auto_update_list(obj, info) {
+    while !cache_ready {
+    }
+
+    if cache.len() <= settings.maxitemsforautoupdate {
+        find(obj.Value)
+    }
+}
 
 STATS_X := PADDING * 2 + INPUT_BOX_WIDTH
 STATS_Y := PADDING + 3
@@ -82,9 +91,10 @@ perf := window.AddText(Format("x{} y{} w{}",
     PERF_WIDTH
 ), "")
 
-base_dir := "C:\.dev\*"
-
 settings := load_settings()
+
+base_dir := ""
+set_base_dir(settings.basedir)
 
 cache := Vec()
 cache_ready := false
@@ -104,7 +114,7 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
         return
     }
 
-    find(input)
+    find(input.Value)
 }
 
 Esc::hide_ui()
@@ -147,6 +157,7 @@ explorer_integration() {
     SendEvent("^l^c")
     Sleep(50)
     set_base_dir(A_Clipboard)
+    SetTimer(() => fill_cache(), -1, 0x7fffffff)
     Sleep(50)
     A_Clipboard := bak
 }
@@ -171,13 +182,16 @@ load_settings() {
     ; For the sake of autocomplete!
     return {
         listviewlimit: settings["listviewlimit"],
-        showfulldir: settings["showfulldir"], 
-        autoclear: settings["autoclear"], 
-        dollarsuffixisendswith: settings["dollarsuffixisendswith"], 
-        qmsuffixiscontains: settings["qmsuffixiscontains"], 
-        ignorewhitespace: settings["ignorewhitespace"], 
-        hideafteruiinteraction: settings["hideafteruiinteraction"], 
-        matchignorecase: settings["matchignorecase"], 
+        showfulldir: settings["showfulldir"],
+        autoclear: settings["autoclear"],
+        dollarsuffixisendswith: settings["dollarsuffixisendswith"],
+        qmsuffixiscontains: settings["qmsuffixiscontains"],
+        ignorewhitespace: settings["ignorewhitespace"],
+        hideafteruiinteraction: settings["hideafteruiinteraction"],
+        matchignorecase: settings["matchignorecase"],
+        basedir: Str.replaceOne(settings["basedir"], "{}", A_UserName),
+        matchpath: settings["matchpath"],
+        maxitemsforautoupdate: settings["maxitemsforautoupdate"],
         integrations: {
             explorer: settings["integrations"]["explorer"], 
             editcmd: settings["integrations"]["editcmd"],
@@ -198,7 +212,11 @@ set_base_dir(path) {
 
     base_dir := temp
     cache_ready := false
-    SetTimer(() => fill_cache(), -1, 0x7fffffff)
+
+    while (list.Delete()) {
+    }
+    input.Value := ""
+    perf.Value := ""
 }
 
 fill_cache() {
@@ -231,7 +249,7 @@ fill_cache() {
     cache_ready := true
 }
 
-find(obj) {
+find(s) {
     global
 
     t := Timer()
@@ -240,7 +258,7 @@ find(obj) {
     while(list.Delete()) {
     }
 
-    if Trim(obj.Value) == "" {
+    if Trim(s) == "" {
         return
     }
 
@@ -256,8 +274,6 @@ find(obj) {
         return
     }
 
-    searching := t.ms()
-
     hit_list := cache
         .filter((_, item) => is_match(item))
         .sort((a, b) => a.score < b.score)
@@ -269,15 +285,12 @@ find(obj) {
     hits := hit_list.len()
     showing := limited.len()
 
-    total := t.ms()
-    filtering := total - searching
+    filtering := t.ms()
 
-    perf.Value := Format("Hits: {}/{}; Caching: {}ms; Filtering: {}ms; Total: {}ms",
+    perf.Value := Format("Hits: {}/{}; Filtering: {}ms",
         hits,
         cache.len(),
-        searching,
-        filtering,
-        total
+        filtering
     )
 }
 
@@ -304,6 +317,10 @@ is_match(item) {
 
     if StrLen(input_str) > StrLen(name) {
         return false
+    }
+
+    if settings.matchpath {
+        name := item.path
     }
 
     i := 1

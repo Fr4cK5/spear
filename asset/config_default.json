@@ -10,5 +10,8 @@
     "dollarsuffixisendswith": true,
     "qmsuffixiscontains": true,
     "ignorewhitespace": true,
-    "hideafteruiinteraction": true
+    "hideafteruiinteraction": true,
+    "basedir": "C:/Users/{}/Documents",
+    "matchpath": false,
+    "maxitemsforautoupdate": 1000
 }
