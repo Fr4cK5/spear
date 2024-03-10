@@ -18,6 +18,14 @@ CoordMode("Mouse", "Screen")
 
 TraySetIcon("./asset/spear-icon.ico")
 
+; WE DEBUGGING
+
+; #Include logger.v2.ahk
+; lg := Logger(, true)
+; Esc::ExitApp()
+
+; WE AINT DEBUGGING NO MORE
+
 WIDTH := 800
 HEIGHT := 600
 PADDING := 20
@@ -28,7 +36,7 @@ window := Gui("+ToolWindow -Caption -AlwaysOnTop")
 window.SetFont(Format("s{}", FONT_SIZE))
 
 INPUT_BOX_POS := PADDING
-INPUT_BOX_WIDTH := WIDTH - PADDING * 2 - 100
+INPUT_BOX_WIDTH := WIDTH - PADDING * 2 - 200
 INPUT_BOX_HEIGHT := 30
 input := window.AddEdit(Format("x{} y{} w{} h{}",
     INPUT_BOX_POS,
@@ -38,7 +46,7 @@ input := window.AddEdit(Format("x{} y{} w{} h{}",
 ))
 
 STATS_X := PADDING * 2 + INPUT_BOX_WIDTH
-STATS_Y := PADDING
+STATS_Y := PADDING + 3
 STATS_WIDTH := WIDTH - STATS_X - PADDING
 STATS_HEIGHT := INPUT_BOX_HEIGHT
 stats := window.AddText(Format("x{} y{} w{} h{}",
@@ -46,7 +54,7 @@ stats := window.AddText(Format("x{} y{} w{} h{}",
     STATS_Y,
     STATS_WIDTH,
     STATS_HEIGHT
-), Format("0/{}", 250)) ; setting? Max items at once
+), Format(""))
 
 LIST_X := PADDING
 LIST_Y := PADDING * 2 + INPUT_BOX_HEIGHT
@@ -65,7 +73,7 @@ list.ModifyCol(2, LIST_WIDTH / 2 - 5)
 list.ModifyCol(3, LIST_WIDTH / 6)
 
 PERF_X := PADDING
-PERF_Y := HEIGHT - PADDING * 2
+PERF_Y := HEIGHT - PADDING * 2 + 7
 PERF_WIDTH := WIDTH - PADDING * 2
 perf := window.AddText(Format("x{} y{} w{}",
     PERF_X,
@@ -75,10 +83,12 @@ perf := window.AddText(Format("x{} y{} w{}",
 
 base_dir := "C:\.dev\*"
 
-cache_ready := false
 cache := Vec()
+cache_ready := false
+SetTimer(() => fill_cache(), -1, 0x7fffffff)
 
 ^#l::{
+    SendEvent("{Ctrl Up}{Win Up}{l Up}")
     explorer_integration()
     show_centered(window, WIDTH, HEIGHT)
     input.Focus()
@@ -143,26 +153,18 @@ set_base_dir(path) {
         temp .= "*"
     }
 
-    ToolTip(temp)
-
     base_dir := temp
+    cache_ready := false
+    SetTimer(() => fill_cache(), -1, 0x7fffffff)
 }
 
-find(obj) {
 
-    t := Timer()
-    t.start()
+fill_cache() {
+    global
 
-    while(list.Delete()) {
-    }
+    cache_ready := false
+    cache.clear()
 
-    if Trim(obj.Value) == "" {
-        return
-    }
-
-    files := Vec()
-
-    ; setting? Search type
     loop files base_dir, "DFR" {
 
         filename := A_LoopFileName
@@ -178,55 +180,81 @@ find(obj) {
         ; setting... Or Show the full thing
         path := StrReplace(path, "\", "/")
 
-        files.push(FileHit(filename, path, A_LoopFileAttrib, obj.Value))
+        cache.push(FileHit(filename, path, A_LoopFileAttrib))
     }
 
-    if files.len() == 0 {
+    stats.Value := Format("Cached {} Files", cache.len())
+
+    cache_ready := true
+}
+
+find(obj) {
+    global
+
+    t := Timer()
+    t.start()
+
+    while(list.Delete()) {
+    }
+
+    if Trim(obj.Value) == "" {
+        return
+    }
+
+    if cache.len() == 0 and cache_ready {
+        SetTimer(() => fill_cache(), -1, 0x7fffffff)
+    }
+
+    while(!cache_ready) {
+    }
+
+    if cache.len() == 0 {
         perf.Value := ""
         return
     }
 
     searching := t.ms()
 
-    files
-        .retain((_, item) => is_match(item))
-        .sortInPlace((a, b) => a.score < b.score)
+    hit_list := cache
+        .filter((_, item) => is_match(item))
+        .sort((a, b) => a.score < b.score)
     
-    limited := files
-        .limitInPlace(250) ; setting? Limit
+    limited := hit_list
+        .limit(250) ; setting? Limit
         .foreach((_, item) => list.Add(, item.filename, item.path, get_pretty_mode(item.attr), item.score))
 
-    hits := files.len()
+    hits := hit_list.len()
     showing := limited.len()
 
     total := t.ms()
     filtering := total - searching
 
-    perf.Value := Format("Hits: {}; Search: {}ms; Filter: {}ms; Total: {}ms",
+    perf.Value := Format("Hits: {}/{}; Caching: {}ms; Filtering: {}ms; Total: {}ms",
         hits,
+        cache.len(),
         searching,
         filtering,
         total
     )
-
-    stats.Value := Format("{}/{}", showing, 250)
 }
 
 is_match(item) {
+    global
+
     ; setting? Ignore case
     name := StrLower(item.filename)
-    input := StrLower(item.input)
+    input_str := StrLower(input.Value)
 
     ; setting? Make $-Suffix search for suffixes instead of fuzzy
-    if Str.hasSuffix(input, "$") {
-        return Str.hasSuffix(name, Str.sub(input, , StrLen(input)).unwrap())
+    if Str.hasSuffix(input_str, "$") {
+        return Str.hasSuffix(name, Str.sub(input_str, , StrLen(input_str)).unwrap())
     }
     ; setting? Make ?-Suffix evaluate containment instead of fuzzy searching
-    if Str.hasSuffix(input, "?") {
-        return Str.contains(name, Str.sub(input, , StrLen(input)).unwrap())
+    if Str.hasSuffix(input_str, "?") {
+        return Str.contains(name, Str.sub(input_str, , StrLen(input_str)).unwrap())
     }
 
-    if StrLen(input) > StrLen(name) {
+    if StrLen(input_str) > StrLen(name) {
         return false
     }
 
@@ -234,7 +262,7 @@ is_match(item) {
     name_len := StrLen(name)
 
     input_idx := 1
-    input_len := StrLen(input)
+    input_len := StrLen(input_str)
 
     last_hit := false
     power := 2
@@ -242,13 +270,12 @@ is_match(item) {
     score := 1
 
     while i <= name_len and input_idx <= input_len {
-        if Str.charUnsafe(name, i) == Str.charUnsafe(input, input_idx) {
+        if Str.charUnsafe(name, i) == Str.charUnsafe(input_str, input_idx) {
             input_idx++
 
             ; setting? ignore whitespace in matching
-            ; while ignore_whitespace and Strings.char...
-            ; This don't quite work... somehow?
-            while Str.char(input, input_idx) == " " {
+            ; while ignore_whitespace && ... { }
+            while input_idx <= StrLen(input_str) and Str.charUnsafe(input_str, input_idx) == " " {
                 input_idx++
             }
 
@@ -261,7 +288,7 @@ is_match(item) {
         }
 
         if last_hit {
-            power += power * seq_len
+            power := Max(seq_len, 2)
             score *= power
         }
         else {
@@ -306,7 +333,6 @@ handle_list_click(obj, info) {
 }
 
 get_pretty_mode(mode) {
-
     s := "Unknown"
     if Files.file(mode) {
         s := "File"
@@ -320,5 +346,4 @@ get_pretty_mode(mode) {
     }
 
     return s
-
 }
