@@ -339,7 +339,7 @@ is_match(item) {
             input_idx++
 
             ; setting? ignore whitespace in matching
-            while settings.ignorewhitespace input_idx <= StrLen(input_str) and Str.charUnsafe(input_str, input_idx) == " " {
+            while settings.ignorewhitespace and input_idx <= StrLen(input_str) and Str.charUnsafe(input_str, input_idx) == " " {
                 input_idx++
             }
 
