@@ -7,9 +7,7 @@
 
 lg := Logger(, true)
 
-lg.dbg("Ptr size: " A_PtrSize)
-
-handle := DllCall("LoadLibrary", "str", "../spearlib.dll", "ptr")
+handle := DllCall("LoadLibrary", "str", "./spearlib.dll", "ptr")
 
 data_buf := Buffer(10000000)
 str_buf := Buffer(500000000)
@@ -37,9 +35,10 @@ filevec := Vec(file_count)
 i := 0
 while i < file_count {
 
-    base := i * 16
-    ptr := NumGet(data_buf.Ptr + base, "ptr")
-    len := NumGet(data_buf.Ptr + base + 8, "int64")
+    base := i * 24
+    ptr := NumGet(data_buf.Ptr, base, "ptr")
+    len := NumGet(data_buf.Ptr, base + 8, "int64")
+    score := NumGet(data_buf.Ptr, base + 16, "int64")
     s := StrGet(ptr, len, "cp0")
     filevec.push(s)
 
@@ -49,6 +48,9 @@ while i < file_count {
 }
 
 lg.dbg(t.ms())
+lg.dbg("Files: " filevec.len())
+
+filevec.limit(10).foreach((_, item) => lg.dbg(item))
 
 s := "balls in your jaws"
 
