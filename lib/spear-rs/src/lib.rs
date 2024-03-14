@@ -1,4 +1,3 @@
-use core::slice;
 use std::{fmt::Display, fs};
 
 #[derive(Clone, Debug)]
@@ -34,10 +33,18 @@ pub struct Data {
 }
 
 #[no_mangle]
-pub extern "C" fn explore_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u8, strs_len: usize) -> usize {
+pub extern "C" fn walk_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u8, strs_len: usize, mut wd_ptr: *mut u8, wd_len: isize) -> usize {
+
+    let mut wd_str = String::new();
+    unsafe {
+        for _ in 0..wd_len {
+            wd_str.push(wd_ptr.read() as char);
+            wd_ptr = wd_ptr.add(1);
+        }
+    };
 
     let mut files = Vec::new();
-    explore(".", &mut files);
+    walk(&wd_str, &mut files);
 
     let base_dat = dat;
     let base_strs = strs;
@@ -73,12 +80,8 @@ pub extern "C" fn explore_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut
 }
 
 #[no_mangle]
-pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: isize) -> usize {
+pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: isize, mut dat_filtered: *mut Data, mut str_filtered: *mut u8) -> usize {
 
-    if item_count >= 1000 {
-        return 0;
-    }
-    
     let mut datas = Vec::new();
     let mut strings = Vec::new();
 
@@ -109,12 +112,29 @@ pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: isize) -> usize {
         }
     }
 
-    filter(&mut datas, &mut strings);
+    let mut out_datas = Vec::new();
+    let mut out_strs = Vec::new();
+    filter(&datas, &strings, &mut out_datas, &mut out_strs);
 
-    69_420
+    let match_count = out_datas.len();
+
+    for (i, data) in out_datas.iter().enumerate() {
+        unsafe {
+            dat_filtered.write_unaligned(data.clone());
+            dat_filtered = dat_filtered.add(1);
+
+            out_strs.get(i).unwrap().chars()
+                .for_each(|c| {
+                    str_filtered.write_unaligned(c as u8);
+                    str_filtered = str_filtered.add(1);
+                });
+        }
+    }
+
+    return match_count;
 }
 
-pub fn explore(path: &str, v: &mut Vec<FileHit>) {
+pub fn walk(path: &str, v: &mut Vec<FileHit>) {
     if let Ok(dir) = fs::read_dir(path) {
         dir.for_each(|item| {
             if item.is_err() {
@@ -130,28 +150,70 @@ pub fn explore(path: &str, v: &mut Vec<FileHit>) {
 
             if let Ok(ftype) = file.file_type() {
                 if ftype.is_dir() {
-                    v.push(FileHit { path: new_path.clone(), mode: FileMode::Dir });
-                    explore(&new_path, v);
+                    v.push(FileHit { path: new_path.replace("\\", "/").replace("//", "/"), mode: FileMode::Dir });
+                    walk(&new_path, v);
                 }
                 else if ftype.is_file() {
-                    v.push(FileHit { path: new_path, mode: FileMode::File });
+                    v.push(FileHit { path: new_path.replace("\\", "/").replace("//", "/"), mode: FileMode::File });
                 }
             }
         });
     }
 }
 
-static mut IGNORE_CASE: bool = false;
-static mut SUFFIX_FILTER: bool = false;
-static mut CONTAINS_FILTER: bool = false;
-static mut MATCH_PATH: bool = false;
+static mut IGNORE_CASE: bool = true;
+static mut SUFFIX_FILTER: bool = true;
+static mut CONTAINS_FILTER: bool = true;
+static mut MATCH_PATH: bool = true;
 static mut IGNORE_WHITESPACE: bool = true;
 static mut USER_INPUT: String = String::new();
 
-pub fn filter(datas: &mut Vec<Data>, paths: &mut Vec<String>) {
+#[no_mangle]
+pub extern "C" fn set_ignore_case(value: isize) {
+    unsafe {
+        IGNORE_CASE = value >= 1;
+    }
+}
+#[no_mangle]
+pub extern "C" fn set_suffix_filter(value: isize) {
+    unsafe {
+        SUFFIX_FILTER = value >= 1;
+    }
+}
+#[no_mangle]
+pub extern "C" fn set_contains_filter(value: isize) {
+    unsafe {
+        CONTAINS_FILTER = value >= 1;
+    }
+}
+#[no_mangle]
+pub extern "C" fn set_match_path(value: isize) {
+    unsafe {
+        MATCH_PATH = value >= 1;
+    }
+}
+#[no_mangle]
+pub extern "C" fn set_ignore_whitespace(value: isize) {
+    unsafe {
+        IGNORE_WHITESPACE = value >= 1;
+    }
+}
+#[no_mangle]
+pub extern "C" fn set_user_input(mut s: *mut u8, len: isize) {
+    unsafe {
+        let mut buf = String::new();
+        for _ in 0..len {
+            buf.push(s.read() as char);
+            s = s.add(1);
+        }
 
-    let mut match_datas = Vec::new();
-    let mut matches = Vec::new();
+        USER_INPUT = buf;
+    }
+}
+
+pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data>, matches: &mut Vec<String>) {
+
+    let user_input = unsafe { &USER_INPUT };
 
     for (i, real_path) in paths.iter().enumerate() {
         let path = if unsafe { IGNORE_CASE } {
@@ -164,15 +226,19 @@ pub fn filter(datas: &mut Vec<Data>, paths: &mut Vec<String>) {
             real_path.to_string()
         };
 
-        if unsafe { SUFFIX_FILTER } && path.ends_with('$') {
-            if path.chars().take(path.len() - 1).collect::<String>().ends_with(unsafe { &USER_INPUT }) {
+        if unsafe { SUFFIX_FILTER } && user_input.ends_with('$') {
+            let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
+            if path.ends_with(real_user_input) {
+                match_datas.push(datas.get(i).unwrap().clone());
                 matches.push(path);
             }
             continue;
         }
 
-        if unsafe { CONTAINS_FILTER } && path.ends_with('?') {
-            if path.chars().take(path.len() - 1).collect::<String>().contains(unsafe { &USER_INPUT }) {
+        if unsafe { CONTAINS_FILTER } && user_input.ends_with('?') {
+            let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
+            if path.contains(real_user_input) {
+                match_datas.push(datas.get(i).unwrap().clone());
                 matches.push(path);
             }
             continue;
@@ -183,7 +249,6 @@ pub fn filter(datas: &mut Vec<Data>, paths: &mut Vec<String>) {
         if user_input_len > path.len() {
             continue;
         }
-
 
         let (is_match, score) = fzf(
             if unsafe { MATCH_PATH } {
