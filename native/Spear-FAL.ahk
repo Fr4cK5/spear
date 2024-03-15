@@ -1,15 +1,13 @@
-#Include ../FileHit.ahk
-#Include ../vec.v2.ahk
-#Include ../option.v2.ahk
-#Include ../result.v2.ahk
-#Include ../logger.v2.ahk
-
-fal_lg := Logger("FAL-Logger", false)
+#Include ../internal/FileHit.ahk
+#Include ../lib/vec.v2.ahk
+#Include ../lib/option.v2.ahk
+#Include ../lib/result.v2.ahk
+#Include ../lib/logger.v2.ahk
 
 /**
  * The FAL or 'FFI Abstraction Layer' or 'Foreign-Function-Interface Abstraction Layer'
  * 
- * It builds an abstraction in between the 'spearlib's native interface' and AutoHotkey.
+ * It builds an abstraction in between 'spearlib's native interface and AutoHotkey.
  * 
  * ```rust
  * pub struct Data {            // Size: 24 bytes

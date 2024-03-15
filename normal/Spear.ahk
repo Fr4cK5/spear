@@ -4,36 +4,26 @@
 CoordMode("Pixel", "Screen")
 CoordMode("Mouse", "Screen")
 
-#Include ../v2d.v2.ahk
-#Include ../viewport.v2.ahk
-#include ../str.v2.ahk
-#Include ../vec.v2.ahk
-#Include ../result.v2.ahk
-#Include ../option.v2.ahk
-#Include ../timer.v2.ahk
-#Include ../files.v2.ahk
-#Include ../jsongo.v2.ahk
+#Include ../lib/v2d.v2.ahk
+#Include ../lib/viewport.v2.ahk
+#include ../lib/str.v2.ahk
+#Include ../lib/vec.v2.ahk
+#Include ../lib/result.v2.ahk
+#Include ../lib/option.v2.ahk
+#Include ../lib/timer.v2.ahk
+#Include ../lib/files.v2.ahk
+#Include ../lib/jsongo.v2.ahk
 
-#Include ../FileHit.ahk
+#Include ../internal/FileHit.ahk
 
 TraySetIcon("../asset/spear-icon.ico")
-
-; WE DEBUGGING
-
-; #Include peep.v2.ahk
-; #Include logger.v2.ahk
-; lg := Logger(, true)
-; Esc::ExitApp()
-
-; WE AINT DEBUGGING NO MORE
 
 WIDTH := 800
 HEIGHT := 600
 PADDING := 20
 FONT_SIZE := 15
 
-; FIXME: Change to +AlwaysOnTop after debugging
-window := Gui("+ToolWindow -Caption -AlwaysOnTop")
+window := Gui("+ToolWindow -Caption +AlwaysOnTop")
 window.SetFont(Format("s{}", FONT_SIZE))
 
 INPUT_BOX_POS := PADDING
