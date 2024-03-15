@@ -1,4 +1,3 @@
-
 class FileHit {
     filename := ""
     path := ""
