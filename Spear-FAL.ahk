@@ -7,18 +7,34 @@
 fal_lg := Logger("FAL-Logger", false)
 
 /*
-Rust struct typedef
+ *
+// Rust struct typedef
 pub struct Data {               ; Size: 24 bytes
     pub path: *const String,    ; Offset: 0
     pub len: usize,             ; Offset: 8
     pub score: usize,           ; Offset: 16
 }
 */
-class FAL {
+
+/**
+ * The FAL or 'FFI Abstraction Layer' or 'Foreign-Function-Interface Abstraction Layer'
+ * 
+ * It builds an abstraction in between the 'spearlib's native interface' and AutoHotkey.
+ * 
+ * ```rust
+ * pub struct Data {            // Size: 24 bytes
+ *     pub path: *const String, // Offset: 0
+ *     pub len: usize,          // Offset: 8
+ *     pub score: usize,        // Offset: 16
+ * }
+ * ```
+ */
+class SpearFAL {
     #Requires AutoHotkey 2.0+
 
     static KiB := 1024
-    static MiB := FAL.KiB * 2014
+    static MiB := 1024 * 2014
+    static SIZEOF_DATA := 24
 
     lib := 0
     data_buf := 0
@@ -31,7 +47,7 @@ class FAL {
 
     /**
      * Constructor
-     * @note Yes, you can freely change these values if you'd like. The AHK program using it will consume this much memory.
+     * @note Yes, you can freely change these values if you'd like. The AHK program using it will consume this much memory at most.
      * @param {Integer} data_buf_size Size of the metadata buffer in megabytes. One entry is 24 bytes in size. Default = 30
      * @param {Integer} str_buf_size Size of the string buffer in megabytes. This holds all the data of walked directories. Default = 500
      * @param {Integer} filtered_data_buf_size Size of the filtered metadata buffer in megabates. One entry is 24 bytes in size. Default = 15
@@ -47,15 +63,20 @@ class FAL {
             throw Error("Found 'spearlib.dll', but unable to load it.")
         }
 
-        ; Data buffers; These hold the "Data" struct definied above.
-        ; 30 Megabytes should be able to fit ~1.2 mil files
-        this.data_buf := Buffer(data_buf_size * FAL.Mib, 0)
-        this.filtered_data_buf := Buffer(filtered_data_buf_size * FAL.Mib, 0)
+        ; I'm NOT zeroing out the memory to prevent AHK from actually using all of the committed memory.
+        ; It also saves some setup time not having to write 0x00 bytes everywhere in the buffer.
+        ; If you look into Task Manager, on the second page under RAM, you should see committed memory.
+        ; The committed amount will jump a serious amount while the actual allocation is done later thereby preserving actual usable and fast memory.
+        ; If you're unsure about what all this means, you can read through this article to get more information.
+        ; https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/introduction-to-the-page-file
+        ; Especially this section: System committed memory:
+        ; https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/introduction-to-the-page-file#system-committed-memory
 
-        ; These hold the actual strings, they need WAY more memory.
-        ; A 3-char string is equal to one whole "Data" entry.
-        this.str_buf := Buffer(str_buf_size * FAL.Mib, 0)
-        this.filtered_str_buf := Buffer(filtered_str_buf_size * FAL.Mib, 0)
+        this.data_buf := Buffer(data_buf_size * SpearFAL.Mib)
+        this.filtered_data_buf := Buffer(filtered_data_buf_size * SpearFAL.Mib)
+
+        this.str_buf := Buffer(str_buf_size * SpearFAL.Mib)
+        this.filtered_str_buf := Buffer(filtered_str_buf_size * SpearFAL.MiB)
 
         this.found_files := 0
         this.matching_files := 0
@@ -115,7 +136,7 @@ class FAL {
 
         i := 0
         while i < this.matching_files {
-            base := i * 24
+            base := i * SpearFAL.SIZEOF_DATA
             str_ptr := NumGet(this.filtered_data_buf, base, "ptr")
             str_len := NumGet(this.filtered_data_buf, base + 8, "int64")
             score := NumGet(this.filtered_data_buf, base + 16, "int64")
@@ -138,7 +159,7 @@ class FAL {
 
         i := 0
         while i < this.found_files {
-            base := i * 24
+            base := i * SpearFAL.SIZEOF_DATA
             str_ptr := NumGet(this.data_buf, base, "ptr")
             str_len := NumGet(this.data_buf, base + 8, "int64")
             str := StrGet(str_ptr, str_len, "cp0")
@@ -174,14 +195,10 @@ class FAL {
         DllCall("spearlib\set_ignore_whitespace", "int64", b)
     }
 
-    total_memory_usage() {
+    reserved_memory() {
         return (
             this.data_buf.Size + this.str_buf.Size +
             this.filtered_str_buf.Size + this.filtered_str_buf.Size
         )
-    }
-
-    total_memory_usage_mib() {
-        return this.total_memory_usage() / FAL.MiB
     }
 }

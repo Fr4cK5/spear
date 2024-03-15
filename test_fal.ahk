@@ -15,12 +15,12 @@ t := Timer()
 t_full.start()
 t.start()
 
-lib := FAL()
+lib := SpearFAL()
 
 setup := t.ms()
 t.start()
 
-lib.set_user_input("300k?")
+lib.set_user_input("main.rs$")
 
 set_user := t.ms()
 t.start()
@@ -39,7 +39,6 @@ found := lib.found_files
 matching := lib.matching_files
 
 lg.dbg(Format("Found: {}; Matching: {}", found, matching))
-lg.dbg(Format("Setup: {}ms, Set user-input: {}ms", setup, set_user))
+lg.dbg(Format("Setup: {}ms, Set User Input: {}ms", setup, set_user))
 lg.dbg(Format("Walk: {}ms, Filter: {}ms", walk, filter))
 lg.dbg(Format("Total: {}ms", total))
-lg.dbg(Format("Memory Usage: {}MiB", lib.total_memory_usage_mib()))
