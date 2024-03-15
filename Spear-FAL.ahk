@@ -17,7 +17,8 @@ pub struct Data {               ; Size: 24 bytes
 class FAL {
     #Requires AutoHotkey 2.0+
 
-    static MEGABYTE := 1000000
+    static KiB := 1024
+    static MiB := FAL.KiB * 2014
 
     lib := 0
     data_buf := 0
@@ -28,7 +29,15 @@ class FAL {
     found_files := 0
     matching_files := 0
 
-    __New() {
+    /**
+     * Constructor
+     * @note Yes, you can freely change these values if you'd like. The AHK program using it will consume this much memory.
+     * @param {Integer} data_buf_size Size of the metadata buffer in megabytes. One entry is 24 bytes in size. Default = 30
+     * @param {Integer} str_buf_size Size of the string buffer in megabytes. This holds all the data of walked directories. Default = 500
+     * @param {Integer} filtered_data_buf_size Size of the filtered metadata buffer in megabates. One entry is 24 bytes in size. Default = 15
+     * @param {Integer} filtered_str_buf_size Size of the filtered string buffer in megabytes. This holds a copy of all the matching directories in the right order. Default = 150
+     */
+    __New(data_buf_size := 30, str_buf_size := 500, filtered_data_buf_size := 15, filtered_str_buf_size := 150) {
         if !FileExist("./spearlib.dll") {
             throw Error("Unable to dll 'spearlib.dll'. If you want to use the native algorithms, make sure 'spearlib.dll' is the same directory as all the other files.")
         }
@@ -40,13 +49,13 @@ class FAL {
 
         ; Data buffers; These hold the "Data" struct definied above.
         ; 30 Megabytes should be able to fit ~1.2 mil files
-        this.data_buf := Buffer(30 * FAL.MEGABYTE, 0)
-        this.filtered_data_buf := Buffer(30 * FAL.MEGABYTE, 0)
+        this.data_buf := Buffer(data_buf_size * FAL.Mib, 0)
+        this.filtered_data_buf := Buffer(filtered_data_buf_size * FAL.Mib, 0)
 
         ; These hold the actual strings, they need WAY more memory.
         ; A 3-char string is equal to one whole "Data" entry.
-        this.str_buf := Buffer(500 * FAL.MEGABYTE, 0)
-        this.filtered_str_buf := Buffer(500 * FAL.MEGABYTE, 0)
+        this.str_buf := Buffer(str_buf_size * FAL.Mib, 0)
+        this.filtered_str_buf := Buffer(filtered_str_buf_size * FAL.Mib, 0)
 
         this.found_files := 0
         this.matching_files := 0
@@ -165,4 +174,14 @@ class FAL {
         DllCall("spearlib\set_ignore_whitespace", "int64", b)
     }
 
+    total_memory_usage() {
+        return (
+            this.data_buf.Size + this.str_buf.Size +
+            this.filtered_str_buf.Size + this.filtered_str_buf.Size
+        )
+    }
+
+    total_memory_usage_mib() {
+        return this.total_memory_usage() / FAL.MiB
+    }
 }
