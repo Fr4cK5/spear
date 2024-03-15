@@ -24,7 +24,8 @@ HEIGHT := 640
 PADDING := 20
 FONT_SIZE := 15
 
-window := Gui("+ToolWindow -Caption +AlwaysOnTop")
+; FIXME: You know what to do!
+window := Gui("+ToolWindow -Caption -AlwaysOnTop")
 window.SetFont(Format("s{}", FONT_SIZE))
 
 INPUT_BOX_POS := PADDING
@@ -391,17 +392,14 @@ handle_list_click(obj, info) {
 }
 
 get_pretty_mode(mode) {
-    s := "Unknown"
-    if Files.file(mode) {
-        s := "File"
+    switch mode {
+    case 0:
+        return "Dir"
+    case 1:
+        return "File"
+    case 2:
+        return "Link"
+    default:
+        return "Unknown"
     }
-    else if Files.directory(mode) {
-        s := "Dir"
-    }
-
-    if Files.link(mode) {
-        s .= "/Link"
-    }
-
-    return s
 }

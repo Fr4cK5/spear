@@ -10,10 +10,26 @@
  * It builds an abstraction in between 'spearlib's native interface and AutoHotkey.
  * 
  * ```rust
- * pub struct Data {            // Size: 24 bytes
+ * pub struct Data {            // Size: 32 bytes
  *     pub path: *const String, // Offset: 0
  *     pub len: usize,          // Offset: 8
  *     pub score: usize,        // Offset: 16
+ *     pub file_type: usize,    // Offset: 24
+ * }
+ * pub enum FileMode {
+ *     File,
+ *     Dir,
+ *     Link,
+ * }
+ * 
+ * impl FileMode {
+ *     fn as_bytes(&self) -> u8 {
+ *         return match self {
+ *             Self::Dir => 0,
+ *             Self::File => 1,
+ *             Self::Link => 2,
+ *         }
+ *     }
  * }
  * ```
  */
@@ -22,7 +38,7 @@ class SpearFAL {
 
     static KiB := 1024
     static MiB := 1024 * 2014
-    static SIZEOF_DATA := 24
+    static SIZEOF_DATA := 32
 
     lib := 0
 
@@ -37,14 +53,15 @@ class SpearFAL {
     /**
      * Constructor
      * @note Yes, you can freely change these values if you'd like. The AHK program using it will consume this much memory at most.
-     * @param {Integer} data_buf_size Size of the metadata buffer in megabytes. One entry is 24 bytes in size. Default = 30
+     * @note For reference, I indexed my whole user folder 'C:/Users/%username%/' whichs containes about 780'000 files. This filled up about 112 Megeabytes (Value from Task Manager)
+     * @param {Integer} data_buf_size Size of the metadata buffer in megabytes. One entry is 32 bytes in size. Default = 50
      * @param {Integer} str_buf_size Size of the string buffer in megabytes. This holds all the data of walked directories. Default = 500
-     * @param {Integer} filtered_data_buf_size Size of the filtered metadata buffer in megabates. One entry is 24 bytes in size. Default = 15
+     * @param {Integer} filtered_data_buf_size Size of the filtered metadata buffer in megabates. One entry is 32 bytes in size. Default = 15
      * @param {Integer} filtered_str_buf_size Size of the filtered string buffer in megabytes. This holds a copy of all the matching directories in the right order. Default = 150
      */
-    __New(data_buf_size := 30, str_buf_size := 500, filtered_data_buf_size := 15, filtered_str_buf_size := 150) {
+    __New(data_buf_size := 50, str_buf_size := 500, filtered_data_buf_size := 15, filtered_str_buf_size := 150) {
         if !FileExist("./spearlib.dll") {
-            throw Error("Unable to dll 'spearlib.dll'. If you want to use the native algorithms, make sure 'spearlib.dll' is the same directory as all the other files.")
+            throw Error("Unable to load dll 'spearlib.dll'. If you want to use the native algorithms, make sure 'spearlib.dll' is the same directory as 'Spear-Native.ahk' and 'Spear-FAL.ahk'.")
         }
 
         this.lib := DllCall("LoadLibrary", "str", "./spearlib.dll")
@@ -141,9 +158,11 @@ class SpearFAL {
             str_ptr := NumGet(this.filtered_data_buf, base, "ptr")
             str_len := NumGet(this.filtered_data_buf, base + 8, "int64")
             score := NumGet(this.filtered_data_buf, base + 16, "int64")
+            file_type := NumGet(this.filtered_data_buf, base + 24, "char")
             str := StrGet(str_ptr, str_len, "cp0")
             name := StrSplit(str, "/")[-1]
-            hit := FileHit(name, str, "N")
+
+            hit := FileHit(name, str, file_type)
             hit.score := score
             v.push(hit)
             i++
@@ -163,9 +182,11 @@ class SpearFAL {
             base := i * SpearFAL.SIZEOF_DATA
             str_ptr := NumGet(this.data_buf, base, "ptr")
             str_len := NumGet(this.data_buf, base + 8, "int64")
+            file_type := NumGet(this.filtered_data_buf, base + 24, "char")
             str := StrGet(str_ptr, str_len, "cp0")
             name := StrSplit(str, "/")[-1]
-            v.push(FileHit(name, str, "N"))
+
+            v.push(FileHit(name, str, file_type))
             i++
         }
 

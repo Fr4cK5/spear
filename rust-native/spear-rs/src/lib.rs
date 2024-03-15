@@ -14,8 +14,26 @@ impl Display for FileMode {
             Self::File => "File",
             Self::Link => "Link",
         });
-
         Ok(())
+    }
+}
+
+impl FileMode {
+    pub fn as_usize(&self) -> usize {
+        return match self {
+            Self::Dir => 0,
+            Self::File => 1,
+            Self::Link => 2,
+        }
+    }
+
+    pub fn from_int(value: usize) -> Self {
+        return match value {
+            0 => Self::Dir,
+            1 => Self::File,
+            2 => Self::Link,
+            _ => panic!("Invalid file mode as integer {}", value),
+        }
     }
 }
 
@@ -30,6 +48,7 @@ pub struct Data {
     pub path: *const String,
     pub len: usize,
     pub score: usize,
+    pub file_type: usize,
 }
 
 #[no_mangle]
@@ -67,7 +86,7 @@ pub extern "C" fn walk_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u8
                         strs = strs.add(1);
                     });
 
-                dat.write_unaligned(Data { path: ptr as *const String, len, score: 0 });
+                dat.write_unaligned(Data { path: ptr as *const String, len, score: 0, file_type: item.mode.as_usize() });
                 dat = dat.add(1);
             }
         });
@@ -272,6 +291,10 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
         data.score = score;
         match_datas.push(data);
     }
+
+    match_datas.sort_by(|a, b| {
+        b.score.cmp(&a.score)
+    });
 }
 
 pub fn fzf(s: &str) -> (bool, usize) {
