@@ -4,19 +4,19 @@
 CoordMode("Pixel", "Screen")
 CoordMode("Mouse", "Screen")
 
-#Include v2d.v2.ahk
-#Include viewport.v2.ahk
-#include str.v2.ahk
-#Include vec.v2.ahk
-#Include result.v2.ahk
-#Include option.v2.ahk
-#Include timer.v2.ahk
-#Include files.v2.ahk
-#Include jsongo.v2.ahk
+#Include ../v2d.v2.ahk
+#Include ../viewport.v2.ahk
+#include ../str.v2.ahk
+#Include ../vec.v2.ahk
+#Include ../result.v2.ahk
+#Include ../option.v2.ahk
+#Include ../timer.v2.ahk
+#Include ../files.v2.ahk
+#Include ../jsongo.v2.ahk
 
-#Include FileHit.ahk
+#Include ../FileHit.ahk
 
-TraySetIcon("./asset/spear-icon.ico")
+TraySetIcon("../asset/spear-icon.ico")
 
 ; WE DEBUGGING
 
@@ -51,7 +51,7 @@ auto_update_list(obj, info) {
     }
 
     if cache.len() <= settings.maxitemsforautoupdate {
-        find(obj.Value)
+        _find(obj.Value)
     }
 }
 
@@ -76,7 +76,7 @@ list := window.AddListView(Format("+Grid x{} y{} w{} h{}",
     LIST_WIDTH,
     LIST_HEIGHT
 ), ["Name", "Directory", "Type", "Score"])
-list.OnEvent("Click", handle_list_click)
+list.OnEvent("Click", _handle_list_click)
 
 list.ModifyCol(1, LIST_WIDTH / 3)
 list.ModifyCol(2, LIST_WIDTH / 2 - 5)
@@ -91,19 +91,19 @@ perf := window.AddText(Format("x{} y{} w{}",
     PERF_WIDTH
 ), "")
 
-settings := load_settings()
+settings := _load_settings()
 
 base_dir := ""
-set_base_dir(settings.basedir)
+_set_base_dir(settings.basedir)
 
 cache := Vec()
 cache_ready := false
-SetTimer(() => fill_cache(), -1, 0x7fffffff)
+SetTimer(() => _fill_cache(), -1, 0x7fffffff)
 
 ^#l::{
     SendEvent("{Ctrl Up}{Win Up}{l Up}")
-    explorer_integration()
-    show_centered(window, WIDTH, HEIGHT)
+    _explorer_integration()
+    _show_centered(window, WIDTH, HEIGHT)
     input.Focus()
 }
 ~*Enter:: {
@@ -114,12 +114,12 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
         return
     }
 
-    find(input.Value)
+    _find(input.Value)
 }
 
-Esc::hide_ui()
+Esc::_hide_ui()
 
-hide_ui() {
+_hide_ui() {
     global
     window.Hide()
 
@@ -132,7 +132,7 @@ hide_ui() {
     }
 }
 
-show_centered(g, width, height) {
+_show_centered(g, width, height) {
     vp := Viewport()
     pos := Vector2(
         vp.halfX() - width / 2,
@@ -141,7 +141,7 @@ show_centered(g, width, height) {
     g.Show(Format("x{} y{} w{} h{}", pos.x, pos.y, width, height))
 }
 
-explorer_integration() {
+_explorer_integration() {
     ; setting? Explorer integration
     if !settings.integrations.explorer {
         return
@@ -156,13 +156,20 @@ explorer_integration() {
     Sleep(50)
     SendEvent("^l^c")
     Sleep(50)
-    set_base_dir(A_Clipboard)
-    SetTimer(() => fill_cache(), -1, 0x7fffffff)
+
+    ; If the user was in This PC > Documents, Downloads, Pictures, etc...
+    ; explorer won't give us our desired path meaning this feature won't work...
+    if !RegExMatch(A_Clipboard, "i)^\w:[\\/]") {
+        return
+    }
+
+    _set_base_dir(A_Clipboard)
+    SetTimer(() => _fill_cache(), -1, 0x7fffffff)
     Sleep(50)
     A_Clipboard := bak
 }
 
-load_settings() {
+_load_settings() {
     user_path_parts := Vec.FromShared(StrSplit(A_MyDocuments, "\"))
     user_path := user_path_parts
         .limit(user_path_parts.len() - 1)
@@ -199,7 +206,7 @@ load_settings() {
     }
 }
 
-set_base_dir(path) {
+_set_base_dir(path) {
     global
     temp := Str.replaceAll(path, "/", "\")
     if !Str.hasSuffix(temp, "\") {
@@ -219,7 +226,7 @@ set_base_dir(path) {
     perf.Value := ""
 }
 
-fill_cache() {
+_fill_cache() {
     global
 
     cache_ready := false
@@ -249,7 +256,7 @@ fill_cache() {
     cache_ready := true
 }
 
-find(s) {
+_find(s) {
     global
 
     t := Timer()
@@ -263,7 +270,7 @@ find(s) {
     }
 
     if cache.len() == 0 and cache_ready {
-        SetTimer(() => fill_cache(), -1, 0x7fffffff)
+        SetTimer(() => _fill_cache(), -1, 0x7fffffff)
     }
 
     while(!cache_ready) {
@@ -275,12 +282,12 @@ find(s) {
     }
 
     hit_list := cache
-        .filter((_, item) => is_match(item))
+        .filter((_, item) => _is_match(item))
         .sort((a, b) => a.score < b.score)
     
     limited := hit_list
         .limit(settings.listviewlimit) ; setting? Limit
-        .foreach((_, item) => list.Add(, item.filename, item.path, get_pretty_mode(item.attr), item.score))
+        .foreach((_, item) => list.Add(, item.filename, item.path, _get_pretty_mode(item.attr), item.score))
 
     hits := hit_list.len()
     showing := limited.len()
@@ -294,7 +301,7 @@ find(s) {
     )
 }
 
-is_match(item) {
+_is_match(item) {
     global
 
     name := item.filename
@@ -367,7 +374,7 @@ is_match(item) {
     return input_idx - 1 == input_len
 }
 
-handle_list_click(obj, info) {
+_handle_list_click(obj, info) {
     name := list.GetText(info, 1)
     path := list.GetText(info, 2)
     mode := list.GetText(info, 3)
@@ -397,11 +404,11 @@ handle_list_click(obj, info) {
 
     ; setting? Autohide after copy / explorer start
     if settings.hideafteruiinteraction {
-        hide_ui()
+        _hide_ui()
     }
 }
 
-get_pretty_mode(mode) {
+_get_pretty_mode(mode) {
     s := "Unknown"
     if Files.file(mode) {
         s := "File"
@@ -415,14 +422,4 @@ get_pretty_mode(mode) {
     }
 
     return s
-}
-
-anySuffix(s, targets*) {
-    for t in targets {
-        if Str.hasSuffix(s, t) {
-            return true
-        }
-    }
-
-    return false
 }

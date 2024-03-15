@@ -1,7 +1,7 @@
 #Requires AutoHotkey 2.0+
 #SingleInstance Force
 
-#Include Spear-FAL.ahk
+#Include native/Spear-FAL.ahk
 #Include logger.v2.ahk
 #Include timer.v2.ahk
 
@@ -42,3 +42,5 @@ lg.dbg(Format("Found: {}; Matching: {}", found, matching))
 lg.dbg(Format("Setup: {}ms, Set User Input: {}ms", setup, set_user))
 lg.dbg(Format("Walk: {}ms, Filter: {}ms", walk, filter))
 lg.dbg(Format("Total: {}ms", total))
+
+LShift::lib.free_mem()

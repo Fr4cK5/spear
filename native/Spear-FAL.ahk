@@ -1,20 +1,10 @@
-#Include FileHit.ahk
-#Include vec.v2.ahk
-#Include option.v2.ahk
-#Include result.v2.ahk
-#Include logger.v2.ahk
+#Include ../FileHit.ahk
+#Include ../vec.v2.ahk
+#Include ../option.v2.ahk
+#Include ../result.v2.ahk
+#Include ../logger.v2.ahk
 
 fal_lg := Logger("FAL-Logger", false)
-
-/*
- *
-// Rust struct typedef
-pub struct Data {               ; Size: 24 bytes
-    pub path: *const String,    ; Offset: 0
-    pub len: usize,             ; Offset: 8
-    pub score: usize,           ; Offset: 16
-}
-*/
 
 /**
  * The FAL or 'FFI Abstraction Layer' or 'Foreign-Function-Interface Abstraction Layer'
@@ -37,6 +27,7 @@ class SpearFAL {
     static SIZEOF_DATA := 24
 
     lib := 0
+
     data_buf := 0
     str_buf := 0
     filtered_data_buf := 0
@@ -86,10 +77,22 @@ class SpearFAL {
         DllCall("FreeLibrary", "ptr", this.lib)
     }
 
+    setup_settings(settings) {
+        this.set_ignore_case(settings.matchignorecase)
+        this.set_suffix_filter(settings.dollarsuffixisendswith)
+        this.set_contains_filter(settings.qmsuffixiscontains)
+        this.set_match_path(settings.matchpath)
+        this.set_ignore_whitespace(settings.ignorewhitespace)
+    }
+
     check_valid() {
         if this.lib == 0 {
             throw Error("Handle to native library is null")
         }
+    }
+
+    buffer_has_items() {
+        return this.found_files != 0
     }
 
     as_buf_ansi(s) {
@@ -200,5 +203,16 @@ class SpearFAL {
             this.data_buf.Size + this.str_buf.Size +
             this.filtered_str_buf.Size + this.filtered_str_buf.Size
         )
+    }
+
+    free_mem() {
+        this.data_buf := Buffer(this.data_buf.Size)
+        this.filtered_data_buf := Buffer(this.filtered_data_buf.Size)
+
+        this.str_buf := Buffer(this.str_buf.Size)
+        this.filtered_str_buf := Buffer(this.filtered_str_buf.Size)
+
+        this.found_files := 0
+        this.matching_files := 0
     }
 }
