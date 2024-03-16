@@ -27,7 +27,7 @@ impl FileMode {
         }
     }
 
-    pub fn from_int(value: usize) -> Self {
+    pub fn from_usize(value: usize) -> Self {
         return match value {
             0 => Self::Dir,
             1 => Self::File,
@@ -183,8 +183,8 @@ pub fn walk(path: &str, v: &mut Vec<FileHit>) {
 static mut IGNORE_CASE: bool = true;
 static mut SUFFIX_FILTER: bool = true;
 static mut CONTAINS_FILTER: bool = true;
-static mut MATCH_PATH: bool = true;
-static mut IGNORE_WHITESPACE: bool = true;
+static mut MATCH_PATH: bool = false;
+static mut IGNORE_WHITESPACE: bool = false;
 static mut USER_INPUT: String = String::new();
 
 #[no_mangle]
@@ -269,7 +269,7 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
             continue;
         }
 
-        let (is_match, score) = fzf(
+        let (is_match, score) = fzf_v2(
             if unsafe { MATCH_PATH } {
                 &path
             }
@@ -297,6 +297,45 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
     });
 }
 
+
+pub fn fzf_v2(path: &str) -> (bool, usize) {
+
+    let input = unsafe { &USER_INPUT };
+    let mut input_idx = 0usize;
+    let mut seq_len = 0usize;
+    let mut score = 1usize;
+
+    if input.len() == 0 || input.trim() == "" {
+        return (false, 1usize);
+    }
+
+    let input = input.chars()
+        .map(|c| c as u8)
+        .collect::<Vec<_>>();
+
+    for c in path.chars() {
+        if input_idx >= input.len() {
+            break;
+        }
+        
+        if c == input[input_idx] as char {
+            input_idx += 1;
+
+            while unsafe { IGNORE_WHITESPACE } && input_idx < input.len() && input[input_idx].is_ascii_whitespace() {
+                input_idx += 1;
+            }
+
+            seq_len += 1;
+            score *= seq_len.max(2);
+        }
+        else {
+            seq_len = 0;
+        }
+    }
+
+    return (input_idx == input.len(), score);
+}
+
 pub fn fzf(s: &str) -> (bool, usize) {
 
     let user_input = unsafe { &USER_INPUT };
@@ -309,9 +348,27 @@ pub fn fzf(s: &str) -> (bool, usize) {
         return (false, 1usize);
     }
 
+    // This is confusing and I'm only about 98% sure on how I fixed it.
+    // Basically, s is the path, and user_input the user input...
+    // I need to work on my naming practices!
+    'path:
     for c in s.chars() {
-        if unsafe { IGNORE_WHITESPACE } && c.is_whitespace() {
-            continue;
+
+        let mut current_ui_char = if let Some(c) = user_input.chars().nth(input_idx) {
+            c
+        }
+        else {
+            break;
+        };
+
+        while unsafe { IGNORE_WHITESPACE } && current_ui_char.is_whitespace() && input_idx < user_input.len() {
+            input_idx += 1;
+            current_ui_char = if let Some(c) = user_input.chars().nth(input_idx) {
+                c
+            }
+            else {
+                break 'path;
+            };
         }
 
         if input_idx >= user_input.len() {
@@ -337,9 +394,21 @@ pub fn fzf(s: &str) -> (bool, usize) {
 }
 
 #[test]
-pub fn test_fzf() {
+pub fn test_fzf_v2() {
+    let ui = "aocone.rs";
+    let path = "aoc-2023/asset/input-one.txt";
+
+    set_ignore_whitespace(1);
     unsafe {
-        USER_INPUT = "bal.rs".into();
+        USER_INPUT = ui.into();
     }
-    dbg!(fzf("ballin.rs"));
+    let (ok, score) = fzf_v2(path);
+
+    if ok {
+        println!("Input '{}' matches '{}' with a score of {}", ui, path, score);
+    }
+    else {
+        println!("Input '{}' doesn't match '{}'", ui, path);
+    }
 }
+

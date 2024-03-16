@@ -19,18 +19,12 @@ CoordMode("Mouse", "Screen")
 
 TraySetIcon("../asset/spear-icon.ico")
 
-/**
- * BUGS:
- *  - matchpath doesn't really work
- *  - ignorewhitespace is also behaving weird
- */
-
 WIDTH := 800
 HEIGHT := 640
 PADDING := 20
 FONT_SIZE := 15
 
-window := Gui("+ToolWindow -Caption +AlwaysOnTop")
+window := Gui("+ToolWindow -Caption -AlwaysOnTop")
 window.SetFont(Format("s{}", FONT_SIZE))
 
 INPUT_BOX_POS := PADDING
