@@ -19,13 +19,17 @@ CoordMode("Mouse", "Screen")
 
 TraySetIcon("../asset/spear-icon.ico")
 
+/**
+ * BUGS:
+ *  - the matchpath settings doesn't really work in Spear-Native..
+ */
+
 WIDTH := 800
 HEIGHT := 640
 PADDING := 20
 FONT_SIZE := 15
 
-; FIXME: You know what to do!
-window := Gui("+ToolWindow -Caption -AlwaysOnTop")
+window := Gui("+ToolWindow -Caption +AlwaysOnTop")
 window.SetFont(Format("s{}", FONT_SIZE))
 
 INPUT_BOX_POS := PADDING
@@ -237,19 +241,13 @@ explorer_integration() {
 }
 
 load_settings() {
-    user_path_parts := Vec.FromShared(StrSplit(A_MyDocuments, "\"))
-    user_path := user_path_parts
-        .limit(user_path_parts.len() - 1)
-        .join("\")
-        .unwrap()
-
     settings := {}
     try {
-        settings_content := FileRead(Format("{}\.config\spear\config.json", user_path))
+        settings_content := FileRead("../config/config.json")
         settings := jsongo.Parse(settings_content)
     }
     catch {
-        settings_content := FileRead(Format("{}\.config\spear\config_default.json", user_path))
+        settings_content := FileRead("../config/spear/config_default.json")
         settings := jsongo.Parse(settings_content)
     }
 

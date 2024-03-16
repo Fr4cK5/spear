@@ -160,19 +160,13 @@ _explorer_integration() {
 }
 
 _load_settings() {
-    user_path_parts := Vec.FromShared(StrSplit(A_MyDocuments, "\"))
-    user_path := user_path_parts
-        .limit(user_path_parts.len() - 1)
-        .join("\")
-        .unwrap()
-
     settings := {}
     try {
-        settings_content := FileRead(Format("{}\.config\spear\config.json", user_path))
+        settings_content := FileRead("../config/config.json")
         settings := jsongo.Parse(settings_content)
     }
     catch {
-        settings_content := FileRead(Format("{}\.config\spear\config_default.json", user_path))
+        settings_content := FileRead("../config/spear/config_default.json")
         settings := jsongo.Parse(settings_content)
     }
 

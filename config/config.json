@@ -1,0 +1,22 @@
+{
+    "autoclear": false,
+    "integrations": {
+        "explorer": true,
+        "editcmd": "notepad {}"
+    },
+    "showfulldir": true,
+    "listviewlimit": 250,
+    "matchignorecase": true,
+    "dollarsuffixisendswith": true,
+    "qmsuffixiscontains": true,
+    "ignorewhitespace": true,
+    "hideafteruiinteraction": true,
+    "basedir": "C:/.dev",
+    "matchpath": false,
+    "maxitemsforautoupdate": 1000,
+    "native": {
+        "maxitemsforautoupdate": 50000,
+        "autofreebuffer": false,
+        "autofreetimeout": 300
+    }
+}
