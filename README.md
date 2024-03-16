@@ -4,10 +4,6 @@ The only Fuzzy-File-Finder you'll need!
 # Installation
 ```powershell
 git clone https://github.com/Fr4cK5/spear
-mkdir ~/.config -ErrorAction SilentlyContinue
-mkdir ~/.config/spear -ErrorAction SilentlyContinue
-Copy-Item ./spear/asset/config_default.json ~/.config/spear/config.json
-Copy-Item ./spear/asset/config_default.json ~/.config/spear/config_default.json
 ```
 
 # Features
@@ -25,7 +21,7 @@ Copy-Item ./spear/asset/config_default.json ~/.config/spear/config_default.json
     - Since all mp3 audio files end with an `.mp3`, this input will find them all
 
 - Containment Matching
-    - To contain-match, just suffix your input with `?`
+    - To containment-match, just suffix your input with `?`
     - You might have some file who's name you just barely remember, right?
     - Assuming the file is called `some-file.txt` any of the following inputs would find it.
         - `some-file.txt?`

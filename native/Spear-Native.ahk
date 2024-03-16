@@ -21,7 +21,8 @@ TraySetIcon("../asset/spear-icon.ico")
 
 /**
  * BUGS:
- *  - the matchpath settings doesn't really work in Spear-Native..
+ *  - matchpath doesn't really work
+ *  - ignorewhitespace is also behaving weird
  */
 
 WIDTH := 800
