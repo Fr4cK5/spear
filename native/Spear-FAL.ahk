@@ -14,7 +14,7 @@
  *     pub path: *const String, // Offset: 0
  *     pub len: usize,          // Offset: 8
  *     pub score: usize,        // Offset: 16
- *     pub file_type: usize,    // Offset: 24
+ *     pub file_type: usize,    // Offset: 24, turns out: AHK doesn't like unaligned reads into char
  * }
  * pub enum FileMode {
  *     File,
@@ -53,7 +53,7 @@ class SpearFAL {
     /**
      * Constructor
      * @note Yes, you can freely change these values if you'd like. The AHK program using it will consume this much memory at most.
-     * @note For reference, I indexed my whole user folder 'C:/Users/%username%/' whichs containes about 780'000 files. This filled up about 112 Megeabytes (Value from Task Manager)
+     * @note For reference, I indexed my whole user folder 'C:/Users/%username%/' which containes about 780'000 files. This filled up about 112 Megabytes (Value from Task Manager)
      * @param {Integer} data_buf_size Size of the metadata buffer in megabytes. One entry is 32 bytes in size. Default = 50
      * @param {Integer} str_buf_size Size of the string buffer in megabytes. This holds all the data of walked directories. Default = 500
      * @param {Integer} filtered_data_buf_size Size of the filtered metadata buffer in megabates. One entry is 32 bytes in size. Default = 15
@@ -69,10 +69,10 @@ class SpearFAL {
             throw Error("Found 'spearlib.dll', but unable to load it.")
         }
 
-        ; I'm NOT zeroing out the memory to prevent AHK from actually using all of the committed memory.
-        ; It also saves some setup time not having to write 0x00 bytes everywhere in the buffer.
+        ; I'm not zeroing out the memory to prevent AHK from actually using all of the committed memory.
+        ; It also saves some setup time by not having to write 0x00 bytes everywhere in the buffer.
         ; If you look into Task Manager, on the second page under RAM, you should see committed memory.
-        ; The committed amount will jump a serious amount while the actual allocation is done later thereby preserving actual usable and fast memory.
+        ; The committed memory will jump a serious amount while the actual allocation is done later (as shown by the graph not jumping) thereby preserving actual usable and fast memory.
         ; If you're unsure about what all this means, you can read through this article to get more information.
         ; https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/introduction-to-the-page-file
         ; Especially this section: System committed memory:
