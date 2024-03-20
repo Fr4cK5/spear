@@ -19,6 +19,8 @@ CoordMode("Mouse", "Screen")
 
 TraySetIcon("../asset/spear-icon.ico")
 
+SetWinDelay(-1)
+
 WIDTH := 800
 HEIGHT := 640
 PADDING := 20
@@ -57,6 +59,7 @@ stats := window.AddText(Format("x{} y{} w{} h{}",
     STATS_HEIGHT
 ), Format(""))
 
+LIST_SELECTION_IDX := -1
 LIST_X := PADDING
 LIST_Y := PADDING * 2 + INPUT_BOX_HEIGHT
 LIST_WIDTH := WIDTH - PADDING * 2
@@ -68,10 +71,32 @@ list := window.AddListView(Format("+Grid x{} y{} w{} h{}",
     LIST_HEIGHT
 ), ["Name", "Directory", "Type", "Score"])
 list.OnEvent("Click", handle_list_click)
+list.OnEvent("Focus", (*) => set_vim_binds(true))
+list.OnEvent("LoseFocus", (*) => set_vim_binds(false))
 
 list.ModifyCol(1, LIST_WIDTH / 3)
 list.ModifyCol(2, LIST_WIDTH / 2 - 5)
 list.ModifyCol(3, LIST_WIDTH / 6)
+
+set_vim_binds(b) {
+    ; Setting? Vim!!! (bindings)
+    if !settings.vim.enabled {
+        return
+    }
+
+    s := b ? "on" : "off"
+
+    Hotkey(settings.vim.list_up, vim_go_up, s)
+    Hotkey(settings.vim.list_down, vim_go_down, s)
+    Hotkey(settings.vim.half_viewport_up, vim_half_viewport_up, s)
+    Hotkey(settings.vim.half_viewport_down, vim_half_viewport_down, s)
+    Hotkey(settings.vim.top, vim_top, s)
+    Hotkey(settings.vim.bot, vim_bot, s)
+    Hotkey(settings.vim.open_explorer, vim_open_explorer, s)
+    Hotkey(settings.vim.edit_file, vim_edit_file, s)
+    Hotkey(settings.vim.yank_path, vim_yank_path, s)
+    Hotkey(settings.vim.yank_name, vim_yank_name, s)
+}
 
 PERF_X := PADDING
 PERF_Y := HEIGHT - PADDING * 2 + 7 - 40
@@ -136,11 +161,10 @@ is_auto_freed := false
 
 SetTimer(() => fill_cache(), -1, 0x7fffffff)
 
+; Ctrl Win L -> Open UI with explorer integration
 ^#l::{
     global
-
     SendEvent("{Ctrl Up}{Win Up}{l Up}")
-
     if is_auto_freed {
         is_auto_freed := false
         auto_free_timer.start()
@@ -151,6 +175,22 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
     show_centered(window, WIDTH, HEIGHT)
     input.Focus()
 }
+; Ctrl Win K -> Open UI without checking for explorer
+^#k::{
+    global
+    SendEvent("{Ctrl Up}{Win Up}{k Up}")
+    if is_auto_freed {
+        is_auto_freed := false
+        auto_free_timer.start()
+        SetTimer(() => fill_cache(), -1, 0x7fffffff)
+    }
+
+    show_centered(window, WIDTH, HEIGHT)
+    input.Focus()
+}
+
+; Manually filter if the amount of found files is too large.
+; You can adjust the maximum amount of items for auto-search in your config.json.
 ~*Enter:: {
     if !WinActive(window) {
         return
@@ -160,6 +200,94 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
     }
 
     find(input.Value)
+}
+
+vim_go_up(*) {
+    global
+    if !list.Focused or LIST_SELECTION_IDX <= 0 {
+        return
+    }
+
+    ControlSend("{up}", list)
+    if LIST_SELECTION_IDX > 1 {
+        LIST_SELECTION_IDX--
+    }
+}
+
+vim_go_down(*) {
+    global
+    if !list.Focused or LIST_SELECTION_IDX == -1 {
+        return
+    }
+
+    ControlSend("{down}", list)
+    if LIST_SELECTION_IDX < list.GetCount() {
+        LIST_SELECTION_IDX++
+    }
+}
+
+vim_half_viewport_up(*) {
+    loop 7 {
+        vim_go_up()
+    }
+}
+
+vim_half_viewport_down(*) {
+    loop 7 {
+        vim_go_down()
+    }
+}
+
+vim_top(*) {
+    loop LIST_SELECTION_IDX - 1 {
+        vim_go_up()
+    }
+}
+
+vim_bot(*) {
+    loop list.GetCount() - LIST_SELECTION_IDX {
+        vim_go_down()
+    }
+}
+
+vim_open_explorer(*) {
+    global
+    if !list.Focused {
+        return
+    }
+
+    path := list.GetText(LIST_SELECTION_IDX, 2)
+    mode := list.GetText(LIST_SELECTION_IDX, 3)
+    explorer_at(path, mode)
+}
+
+vim_edit_file(*) {
+    global
+    if !list.Focused {
+        return
+    }
+
+    path := list.GetText(LIST_SELECTION_IDX, 2)
+    mode := list.GetText(LIST_SELECTION_IDX, 3)
+    edit_file(path, mode)
+}
+
+vim_yank_path(*) {
+    global
+    if !list.Focused {
+        return
+    }
+
+    A_Clipboard := list.GetText(LIST_SELECTION_IDX, 2)
+}
+
+vim_yank_name(*) {
+    global
+    if !list.Focused {
+        return
+    }
+
+    A_Clipboard := list.GetText(LIST_SELECTION_IDX, 1)
 }
 
 ~Esc::hide_ui()
@@ -267,7 +395,20 @@ load_settings() {
             maxitemsforautoupdate: settings["native"]["maxitemsforautoupdate"], ; Same as above; This value overrides the one above if you're using Spear-Native
             autofreebuffer: settings["native"]["autofreebuffer"], ; Automatically free the buffer and release the memory
             autofreetimeout: settings["native"]["autofreetimeout"], ; The time (seconds) Spear-Native must be in idle (you don't interact with it at all) to automatically free the buffers
-        }
+        },
+        vim: { ; When filtering, use Tab to move focus to the listview. Here you'll be able to use vim bindings if you'd like.
+            enabled: settings["vim"]["enabled"],
+            list_up: settings["vim"]["list_up"],
+            list_down: settings["vim"]["list_down"],
+            open_explorer: settings["vim"]["open_explorer"],
+            edit_file: settings["vim"]["edit_file"],
+            half_viewport_up: settings["vim"]["half_viewport_up"],
+            half_viewport_down: settings["vim"]["half_viewport_down"],
+            bot: settings["vim"]["bot"],
+            top: settings["vim"]["top"],
+            yank_path: settings["vim"]["yank_path"],
+            yank_name: settings["vim"]["yank_name"],
+        },
     }
 }
 
@@ -286,6 +427,13 @@ set_base_dir(path) {
 
     if Str.endsWith(temp, "/") {
         temp := Str.sub(temp).unwrap()
+    }
+
+    ; We only want to return after all the sanitizing has been done since
+    ; this ensures that we're actually dealing with the same path.
+    ; This way we know for sure that we don't need to re-index the whole directory structure.
+    if base_dir == temp {
+        return
     }
 
     base_dir := temp
@@ -330,6 +478,7 @@ find(s) {
     t := Timer()
     t.start()
 
+    LIST_SELECTION_IDX := -1
     while list.Delete() {
     }
 
@@ -348,6 +497,31 @@ find(s) {
         lib.found_files,
         filtering
     )
+
+    if hits > 0 {
+        LIST_SELECTION_IDX := 0
+    }
+}
+
+explorer_at(path, filemode) {
+    path_parts := Vec.FromClone(StrSplit(path, "/"))
+    working_dir := path_parts
+        .limit(path_parts.len() - (Str.hasPrefix(filemode, "File") ? 1 : 0))
+        .join("\")
+    
+    if working_dir.isNone() {
+        return
+    }
+
+    Run(Format("explorer {}", working_dir.unwrap()))
+}
+
+edit_file(path, filemode) {
+    if filemode != "File" and filemode != "Link" {
+        return
+    }
+
+    Run(Format(settings.integrations.editcmd, path))
 }
 
 handle_list_click(obj, info) {
@@ -355,20 +529,11 @@ handle_list_click(obj, info) {
     path := list.GetText(info, 2)
     mode := list.GetText(info, 3)
 
-    path_parts := Vec.FromClone(StrSplit(path, "/"))
     if GetKeyState("Control", "P") {
-        working_dir := path_parts
-            .limit(path_parts.len() - (Str.hasPrefix(mode, "File") ? 1 : 0))
-            .join("\")
-        
-        if working_dir.isNone() {
-            return
-        }
-
-        Run(Format("explorer {}", working_dir.unwrap()))
+        explorer_at(path, mode)
     }
     else if GetKeyState("LAlt", "P") {
-        Run(Format(settings.integrations.editcmd, path))
+        edit_file(path, mode)
     }
 
     if GetKeyState("LAlt", "P") {

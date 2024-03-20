@@ -18,5 +18,18 @@
         "maxitemsforautoupdate": 50000,
         "autofreebuffer": false,
         "autofreetimeout": 300
+    },
+    "vim": {
+        "enabled": true,
+        "list_up": "j",
+        "list_down": "k",
+        "half_viewport_up": "^j",
+        "half_viewport_down": "^k",
+        "bot": "+g",
+        "top": "g",
+        "open_explorer": "e",
+        "edit_file": "f",
+        "yank_path": "y",
+        "yank_name": "+y"
     }
 }
