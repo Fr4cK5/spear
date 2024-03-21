@@ -1,6 +1,5 @@
-#Requires AutoHotkey 2.0.2+
-
 class SpearGUI {
+    #Requires AutoHotkey 2.0.2+
 
     ; Okay listen. When I add more gui elements I will refactor this.
     ; but for now, this does it's job just fine.
