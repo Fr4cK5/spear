@@ -299,6 +299,10 @@ explorer_integration() {
         return
     }
 
+    ; Since the windows desktop is just an explorer isntance under the hood,
+    ; we need to also make sure that it's an actual window via filtering the ahk_class too
+    ; If you're reading this code, AutoHotkey Window Spy is very helpful with these kinds of things
+    ; Assuming you've got AHK on your system, it should be installed.
     handle := WinActive("ahk_exe explorer.exe ahk_class CabinetWClass")
     if !handle {
         return

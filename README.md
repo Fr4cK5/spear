@@ -66,6 +66,9 @@ In case you're wondering, the original `config.json` is my own.
     - `LButton` Copy filepath to system clipboard
     - `LCtrl+LButton` Open entry in Explorer. This can be toggled in the settings
     - `LAlt+LButton` Execute the command set in the config with `{}` being replaced with the file's path
+- Vim-Mode
+    - If you've enabled Vim-Mode, you can focus the list by pressing tab (assuming the input is currently focused.)
+    - All your configured keybinds will now be applied.
 - `Esc` Hide the UI
 
 # Settings
