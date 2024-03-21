@@ -22,7 +22,18 @@ TraySetIcon("../asset/spear-icon.ico")
 
 SetWinDelay(-1)
 
-spear_gui := SpearGUI.mk_gui()
+; GUI
+; GUI
+; GUI
+
+spear_gui := SpearGUI.new(
+    800,
+    700,
+    20,
+    15,
+    35,
+    150
+)
 
 spear_gui.input.OnEvent("Change", auto_update_list)
 auto_update_list(obj, info) {
@@ -34,6 +45,7 @@ auto_update_list(obj, info) {
     }
 }
 
+LIST_SELECTION_IDX := -1
 spear_gui.list.OnEvent("Click", handle_list_click)
 spear_gui.list.OnEvent("Focus", (*) => set_vim_binds(true))
 spear_gui.list.OnEvent("LoseFocus", (*) => set_vim_binds(false))
@@ -78,6 +90,16 @@ select_dir_callback(*) {
     SetTimer(() => fill_cache(), -1, 0x7fffffff)
 }
 
+spear_gui.refresh_cache.OnEvent("Click", refresh_cache)
+refresh_cache(*) {
+    cache_ready := false
+    SetTimer(() => fill_cache(), -1, 0x7fffffff)
+}
+
+; Init
+; Init
+; Init
+
 settings := load_settings()
 
 base_dir := ""
@@ -90,6 +112,10 @@ auto_free_timer := Timer()
 is_auto_freed := false
 
 SetTimer(() => fill_cache(), -1, 0x7fffffff)
+
+; Hotkeys
+; Hotkeys
+; Hotkeys
 
 ; Ctrl Win L -> Open UI with explorer integration
 ^#l::{
@@ -131,6 +157,12 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
 
     find(spear_gui.input.Value)
 }
+
+~Esc::hide_ui()
+
+; Gui Callbacks
+; Gui Callbacks
+; Gui Callbacks
 
 vim_go_up(*) {
     global
@@ -214,7 +246,9 @@ vim_yank_name(*) {
     A_Clipboard := spear_gui.list.GetText(LIST_SELECTION_IDX, 1)
 }
 
-~Esc::hide_ui()
+; Functions
+; Functions
+; Functions
 
 hide_ui() {
     global
@@ -231,7 +265,7 @@ clear_ui(lib_initialized := true, preserve_stats := false) {
     while spear_gui.list.Delete() {
     }
     spear_gui.input.Value := ""
-    spear_gui.perf.Value := ""
+    spear_gui.perf.Value := "..."
     if !preserve_stats and lib_initialized and lib.found_files == 0 {
         spear_gui.stats.Value := "No files indexed"
     }
@@ -393,7 +427,7 @@ find(s) {
     if Trim(s) == "" or lib.found_files == 0 {
         while spear_gui.list.Delete() {
         }
-        spear_gui.perf.Value := ""
+        spear_gui.perf.Value := "..."
         return
     }
 

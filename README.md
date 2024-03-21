@@ -8,8 +8,8 @@ git clone https://github.com/Fr4cK5/spear
 
 # Note
 
-- The right version to use is Spear-Native `./native/Spear-Native.ahk`
-- The normal version `./normal/Spear.ahk` is deprecated. If you use it expect
+- Spear-Native `./native/Spear-Native.ahk` is the the prefered
+- The normal version `./normal/Spear.ahk` is deprecated. If you use it, expect
     - No further updates
     - Less features
     - Bugs
@@ -100,7 +100,10 @@ git clone https://github.com/Fr4cK5/spear
 
 # Acknowledgements
 
-Spear's config system would not have been possible without [GroggyOtter's](https://github.com/GroggyOtter) amazing JSON library [jsongo.ahk](https://github.com/GroggyOtter/jsongo_AHKv2).
+- Spear's config system would not have been possible without [GroggyOtter's](https://github.com/GroggyOtter) amazing JSON library: [jsongo.ahk](https://github.com/GroggyOtter/jsongo_AHKv2).
+
+- I also used another one of GroggyOtter's libraries during development: [Peep.ahk](https://github.com/GroggyOtter/PeepAHK)
+
 Thank you for your dedication to the AHK-Community.
 
 # Thank you

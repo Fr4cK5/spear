@@ -16,10 +16,12 @@
  *     pub score: usize,        // Offset: 16
  *     pub file_type: usize,    // Offset: 24, turns out: AHK doesn't like unaligned reads into char
  * }
+ * 
  * pub enum FileMode {
  *     File,
  *     Dir,
  *     Link,
+ *     Any,
  * }
  * 
  * impl FileMode {
@@ -28,6 +30,7 @@
  *             Self::Dir => 0,
  *             Self::File => 1,
  *             Self::Link => 2,
+ *             Self::Any => 4,
  *         }
  *     }
  * }
@@ -37,7 +40,7 @@ class SpearFAL {
     #Requires AutoHotkey 2.0.2+
 
     static KiB := 1024
-    static MiB := 1024 * 2014
+    static MiB := 1024 * 1014
     static SIZEOF_DATA := 32
 
     lib := 0
@@ -78,10 +81,10 @@ class SpearFAL {
         ; Especially this section: System committed memory:
         ; https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/introduction-to-the-page-file#system-committed-memory
 
-        this.data_buf := Buffer(data_buf_size * SpearFAL.Mib)
-        this.filtered_data_buf := Buffer(filtered_data_buf_size * SpearFAL.Mib)
+        this.data_buf := Buffer(data_buf_size * SpearFAL.MiB)
+        this.filtered_data_buf := Buffer(filtered_data_buf_size * SpearFAL.MiB)
 
-        this.str_buf := Buffer(str_buf_size * SpearFAL.Mib)
+        this.str_buf := Buffer(str_buf_size * SpearFAL.MiB)
         this.filtered_str_buf := Buffer(filtered_str_buf_size * SpearFAL.MiB)
 
         this.found_files := 0

@@ -4,42 +4,35 @@ class SpearGUI {
 
     ; Okay listen. When I add more gui elements I will refactor this.
     ; but for now, this does it's job just fine.
-    static mk_gui(WIDTH := 800, HEIGHT := 640, PADDING := 20, FONT_SIZE := 15, BUTTON_HEIGHT := 34, BUTTON_WIDTH := 150) {
+    static new(WIDTH := 800, HEIGHT := 700, PADDING := 20, FONT_SIZE := 15, BUTTON_HEIGHT := 35, BUTTON_WIDTH := 150) {
         window := Gui("+ToolWindow -Caption -AlwaysOnTop")
         window.SetFont(Format("s{}", FONT_SIZE))
 
+        window.MarginX := PADDING
+        window.MarginY := PADDING
+
+        CONTENT_WIDTH := WIDTH - PADDING * 2
+
         ; Filter input
-        INPUT_BOX_POS := PADDING
-        INPUT_BOX_WIDTH := WIDTH - PADDING * 2 - 200
+        INPUT_BOX_WIDTH := CONTENT_WIDTH - WIDTH / 4
         INPUT_BOX_HEIGHT := 30
-        input := window.AddEdit(Format("x{} y{} w{} h{}",
-            INPUT_BOX_POS,
-            INPUT_BOX_POS,
+        input := window.AddEdit(Format("xm ym w{} h{}",
             INPUT_BOX_WIDTH,
             INPUT_BOX_HEIGHT
         ))
 
         ; Filecount stats
-        STATS_X := PADDING * 2 + INPUT_BOX_WIDTH
-        STATS_Y := PADDING + 3
-        STATS_WIDTH := WIDTH - STATS_X - PADDING
+        STATS_WIDTH := WIDTH * .25 - PADDING * 2
         STATS_HEIGHT := INPUT_BOX_HEIGHT
-        stats := window.AddText(Format("x{} y{} w{} h{}",
-            STATS_X,
-            STATS_Y,
+        stats := window.AddText(Format("x+m ym+3 w{} hp",
             STATS_WIDTH,
             STATS_HEIGHT
-        ), Format(""))
+        ), "...")
 
         ; File list-view
-        LIST_SELECTION_IDX := -1
-        LIST_X := PADDING
-        LIST_Y := PADDING * 2 + INPUT_BOX_HEIGHT
-        LIST_WIDTH := WIDTH - PADDING * 2
-        LIST_HEIGHT := HEIGHT - PADDING * 2 - INPUT_BOX_HEIGHT - 80
-        list := window.AddListView(Format("+Grid x{} y{} w{} h{}",
-            LIST_X,
-            LIST_Y,
+        LIST_WIDTH := CONTENT_WIDTH
+        LIST_HEIGHT := HEIGHT * .78 - PADDING * 2
+        list := window.AddListView(Format("+Grid xm y+m-3 w{} h{}",
             LIST_WIDTH,
             LIST_HEIGHT
         ), ["Name", "Directory", "Type", "Score"])
@@ -48,42 +41,35 @@ class SpearGUI {
         list.ModifyCol(3, LIST_WIDTH / 6)
 
         ; Performance metrics and matching stats
-        PERF_X := PADDING
-        PERF_Y := HEIGHT - PADDING * 2 + 7 - 40
-        PERF_WIDTH := WIDTH - PADDING * 2
-        perf := window.AddText(Format("x{} y{} w{}",
-            PERF_X,
-            PERF_Y,
+        PERF_WIDTH := CONTENT_WIDTH
+        perf := window.AddText(Format("xm y+3 w{}",
             PERF_WIDTH
         ), "")
 
         ; Free FFI buffers
-        FREE_X := PERF_X
-        FREE_Y := PERF_Y + 30
-        free_button := window.AddButton(Format("x{} y{} w{} h{}",
-            FREE_X,
-            FREE_Y,
+        OFFSET_Y := 5
+        free_button := window.AddButton(Format("xm y+{} w{} h{}",
+            OFFSET_Y,
             BUTTON_WIDTH,
             BUTTON_HEIGHT
-        ), "Free memory")
+        ), "Clear Cache")
+
+        ; Refresh the cache in the current directory or re-index all hierarchy
+        refresh_cache := window.AddButton(Format("x+m yp w{} h{}",
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT
+        ), "Refresh Cache")
 
         ; Select and index andother directory manually
-        SELECT_X := FREE_X + BUTTON_WIDTH + PADDING
-        SELECT_Y := FREE_Y
-        SELECT_WIDTH := BUTTON_WIDTH
-        select_dir := window.AddButton(Format("x{} y{} w{} h{}",
-            SELECT_X,
-            SELECT_Y,
-            SELECT_WIDTH,
+        select_dir := window.AddButton(Format("x+m yp w{} h{}",
+            BUTTON_WIDTH,
             BUTTON_HEIGHT
         ), "Select Dir")
 
-        NEW_PATH_X := SELECT_X + PADDING + BUTTON_WIDTH
-        NEW_PATH_Y := FREE_Y
-        NEW_PATH_WIDTH := 413
-        new_path_label := window.AddEdit(Format("x{} y{} w{} +Disabled",
-            NEW_PATH_X + 7,
-            NEW_PATH_Y,
+        ; Current path
+        NEW_PATH_WIDTH := CONTENT_WIDTH - 1 ; I somehow saw the off-by-one-pixel and fixed it!
+        new_path_label := window.AddEdit(Format("xm+1 y+{} w{} +Disabled",
+            OFFSET_Y,
             NEW_PATH_WIDTH
         ), "")
         
@@ -100,6 +86,7 @@ class SpearGUI {
             perf: perf,
             free_button: free_button,
             select_dir: select_dir,
+            refresh_cache: refresh_cache,
             new_path_label: new_path_label,
         }
     }
