@@ -7,7 +7,7 @@
 /**
  * The FAL or 'FFI Abstraction Layer' or 'Foreign-Function-Interface Abstraction Layer'
  * 
- * It builds an abstraction in between 'spearlib's native interface and AutoHotkey.
+ * It builds an abstraction in between spearlib's native interface and AutoHotkey.
  * 
  * ```rust
  * pub struct Data {            // Size: 32 bytes
@@ -34,7 +34,7 @@
  * ```
  */
 class SpearFAL {
-    #Requires AutoHotkey 2.0+
+    #Requires AutoHotkey 2.0.2+
 
     static KiB := 1024
     static MiB := 1024 * 2014

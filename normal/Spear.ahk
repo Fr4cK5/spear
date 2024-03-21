@@ -18,6 +18,11 @@ CoordMode("Mouse", "Screen")
 
 TraySetIcon("../asset/spear-icon.ico")
 
+deprecated_info := MsgBox("You're using the deprecated version of Spear.`nThere will be no further updates to this version.`nIt is a lot slower than Spear-Native, has less features and likely more bugs.`nYou're on your own if you decide to use it.`nWould you like to continue?", "Deprecated", "YN Icon!")
+if deprecated_info == "No" {
+    ExitApp()
+}
+
 WIDTH := 800
 HEIGHT := 600
 PADDING := 20
@@ -35,8 +40,8 @@ input := window.AddEdit(Format("x{} y{} w{} h{}",
     INPUT_BOX_WIDTH,
     INPUT_BOX_HEIGHT
 ))
-input.OnEvent("Change", auto_update_list)
-auto_update_list(obj, info) {
+input.OnEvent("Change", _auto_update_list)
+_auto_update_list(obj, info) {
     while !cache_ready {
     }
 

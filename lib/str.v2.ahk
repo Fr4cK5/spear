@@ -10,7 +10,7 @@
 #Include option.v2.ahk
 
 class Str {
-    #Requires AutoHotkey v2.0.2+
+    #Requires AutoHotkey 2.0.2+
 
     /**
      * Check if `idx` is within the bounds of `s`
