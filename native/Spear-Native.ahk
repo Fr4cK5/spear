@@ -73,6 +73,11 @@ list := window.AddListView(Format("+Grid x{} y{} w{} h{}",
 list.OnEvent("Click", handle_list_click)
 list.OnEvent("Focus", (*) => set_vim_binds(true))
 list.OnEvent("LoseFocus", (*) => set_vim_binds(false))
+list.OnEvent("ItemFocus", set_list_selection)
+set_list_selection(_, item) {
+    global
+    LIST_SELECTION_IDX := item
+}
 
 list.ModifyCol(1, LIST_WIDTH / 3)
 list.ModifyCol(2, LIST_WIDTH / 2 - 5)
@@ -209,9 +214,6 @@ vim_go_up(*) {
     }
 
     ControlSend("{up}", list)
-    if LIST_SELECTION_IDX > 1 {
-        LIST_SELECTION_IDX--
-    }
 }
 
 vim_go_down(*) {
@@ -221,9 +223,6 @@ vim_go_down(*) {
     }
 
     ControlSend("{down}", list)
-    if LIST_SELECTION_IDX < list.GetCount() {
-        LIST_SELECTION_IDX++
-    }
 }
 
 vim_half_viewport_up(*) {
@@ -528,6 +527,9 @@ handle_list_click(obj, info) {
     name := list.GetText(info, 1)
     path := list.GetText(info, 2)
     mode := list.GetText(info, 3)
+
+    ; Unsure if this makes things better or worse, but it works just fine!
+    LIST_SELECTION_IDX := info
 
     if GetKeyState("Control", "P") {
         explorer_at(path, mode)

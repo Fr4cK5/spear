@@ -2,7 +2,7 @@
 The only Fuzzy-File-Finder you'll need!
 
 # Installation
-```powershell
+```bash
 git clone https://github.com/Fr4cK5/spear
 ```
 
@@ -32,7 +32,8 @@ git clone https://github.com/Fr4cK5/spear
 
 # Usage
 
-- `LCtrl+LWin+L` Open the UI
+- `LCtrl+LWin+L` Open the UI with explorer integration if enabled
+- `LCtrl+LWin+K` Open the UI without explorer integration
 - Clicking
     - `LButton` Copy filepath to system clipboard
     - `LCtrl+LButton` Open entry in Explorer. This can be toggled in the settings
@@ -59,4 +60,15 @@ git clone https://github.com/Fr4cK5/spear
     - `maxitemsforautoupdate` Same as above. This value overrides the one above if you're using `Spear-Native`
     - `autofreebuffer` Automatically free the buffer and release the memory
     - `autofreetimeout` The time (seconds) `Spear-Native` must be in idle (on user-interaction) to automatically free the buffers
-
+- `vim`
+    - `enabled` Enable vim keybinds when the list view is in focus
+    - `list_up` Keybind to go up
+    - `list_down` Keybind to go down
+    - `half_viewport_up` Keybind to go up half a viewport
+    - `half_viewport_down` Keybind to go down half a viewport
+    - `bot` Keybind to go to the bottom of the list view (This emulates a bunch of keypresses which makes it rather slow)
+    - `top` Keybind to go to the top of the list view (This too)
+    - `open_explorer` Keybind to open explorer at the selected item
+    - `edit_file` Keybind to execute the `integrations/editcmd` command on the selected item
+    - `yank_path` Keybind to copy ("yank" in vim terminology) the item's path
+    - `yank_name` Keybind to copy the item's name
