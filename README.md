@@ -6,6 +6,11 @@ The only Fuzzy-Finder you'll need!
 git clone https://github.com/Fr4cK5/spear
 ```
 
+Make a copy of the file `./config/config_default.json` and name it `config.json` overwriting the original one.
+Now you can safely edit your config while also having a fallback option.
+
+In case you're wondering, the original `config.json` is my own.
+
 # Note
 
 - Spear-Native `./native/Spear-Native.ahk` is the version you should be using
@@ -65,7 +70,9 @@ git clone https://github.com/Fr4cK5/spear
 
 # Settings
 
-**All of this would not have been possible without GroggyOtters JSON library: `jsongo.ahk`**
+**All of this would not have been possible without GroggyOtter's JSON parsing library: `jsongo.ahk`**
+
+**Note: Some values contain a `{}`. This is a placeholder for a dynamically generated value. Do not remove it. Any text outside of it however can be changed.**
 
 - `listviewlimit` How many items the list view can display at a time
 - `showfulldir` Show the full directory of the item or just the last part of it
@@ -80,13 +87,13 @@ git clone https://github.com/Fr4cK5/spear
 - `maxitemsforautoupdate` Maximum amount of items to automatically filter and update the list while typing making it feel "realtime"
 - `integrations`
     - `explorer` Enable the explorer integration
-    - `editcmd` The command to be executed when opening a file from the UI's list via `LCtrl+LButton`
+    - `editcmd` The command to be executed when opening a file from the UI's list via `LAlt+LButton` or `f` in Vim-Mode
 - `native` How many items the list view can display at a time
     - `maxitemsforautoupdate` Same as above. This value overrides the one above if you're using `Spear-Native`
     - `autofreebuffer` Automatically free the buffer and release the memory
     - `autofreetimeout` The time (seconds) `Spear-Native` must be in idle (on user-interaction) to automatically free the buffers
 - `vim`
-    - `enabled` Enable vim keybinds when the list view is in focus
+    - `enabled` Enable vim keybinds when the list view is in focus. This will disable the "find item via pressing the first letter of its name" feature.
     - `list_up` Keybind to go up
     - `list_down` Keybind to go down
     - `half_viewport_up` Keybind to go up half a viewport
@@ -98,10 +105,19 @@ git clone https://github.com/Fr4cK5/spear
     - `yank_path` Keybind to copy ("yank" in vim terminology) the item's path
     - `yank_name` Keybind to copy the item's name
 
+To change any of the config's values, just change them! They config files are located under `./config/`.
+
+- Spear will try to decode two different files based on if they exist or not
+    1. `config.json` Your config
+    1. `config_default.json` Fallback default config
+
+If both the files don't exist, the process will exit with an error.
+
+(Note: **There is no config-validation other than your config file must be syntactically correct json. If you mess with some values and it doesn't work that's on you**).
+
 # Acknowledgements
 
 - Spear's config system would not have been possible without [GroggyOtter's](https://github.com/GroggyOtter) amazing JSON library: [jsongo.ahk](https://github.com/GroggyOtter/jsongo_AHKv2)
-
 - I also used another one of GroggyOtter's libraries during development: [Peep.ahk](https://github.com/GroggyOtter/PeepAHK)
 
 Thank you for your dedication to the AHK-Community.

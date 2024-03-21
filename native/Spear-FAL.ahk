@@ -2,7 +2,6 @@
 #Include ../lib/vec.v2.ahk
 #Include ../lib/option.v2.ahk
 #Include ../lib/result.v2.ahk
-#Include ../lib/logger.v2.ahk
 
 /**
  * The FAL or 'FFI Abstraction Layer' or 'Foreign-Function-Interface Abstraction Layer'

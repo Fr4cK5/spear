@@ -311,6 +311,7 @@ explorer_integration() {
 
     ; If the user was in This PC > Documents, Downloads, Pictures, etc...
     ; explorer won't give us our desired path meaning this feature won't work...
+    ; Sub-folders still work though!
     if !RegExMatch(A_Clipboard, "i)^\w:[\\/]") {
         return
     }
