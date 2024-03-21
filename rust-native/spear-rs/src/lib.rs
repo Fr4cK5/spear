@@ -245,9 +245,20 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
             real_path.to_string()
         };
 
+        let the_actual_real_thing_to_match = if unsafe { MATCH_PATH } {
+            &path
+        }
+        else {
+            let parts = &path.split("/").collect::<Vec<_>>();
+            if parts.is_empty() {
+                continue;
+            }
+            *parts.last().unwrap()
+        };
+
         if unsafe { SUFFIX_FILTER } && user_input.ends_with('$') {
             let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
-            if path.ends_with(real_user_input) {
+            if the_actual_real_thing_to_match.ends_with(real_user_input) {
                 match_datas.push(datas.get(i).unwrap().clone());
                 matches.push(path);
             }
@@ -256,7 +267,7 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
 
         if unsafe { CONTAINS_FILTER } && user_input.ends_with('?') {
             let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
-            if path.contains(real_user_input) {
+            if the_actual_real_thing_to_match.contains(real_user_input) {
                 match_datas.push(datas.get(i).unwrap().clone());
                 matches.push(path);
             }
@@ -269,18 +280,7 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
             continue;
         }
 
-        let (is_match, score) = fzf_v2(
-            if unsafe { MATCH_PATH } {
-                &path
-            }
-            else {
-                let parts = &path.split("/").collect::<Vec<_>>();
-                if parts.is_empty() {
-                    continue;
-                }
-                parts.last().unwrap()
-            }
-        );
+        let (is_match, score) = fzf(the_actual_real_thing_to_match);
 
         if !is_match {
             continue;
@@ -298,7 +298,7 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
 }
 
 
-pub fn fzf_v2(path: &str) -> (bool, usize) {
+pub fn fzf(path: &str) -> (bool, usize) {
 
     let input = unsafe { &USER_INPUT };
     let mut input_idx = 0usize;
@@ -336,65 +336,8 @@ pub fn fzf_v2(path: &str) -> (bool, usize) {
     return (input_idx == input.len(), score);
 }
 
-pub fn fzf(s: &str) -> (bool, usize) {
-
-    let user_input = unsafe { &USER_INPUT };
-    let mut input_idx = 0usize;
-    let mut last_hit;
-    let mut seq_len = 0usize;
-    let mut score = 1usize;
-
-    if user_input.trim() == "" {
-        return (false, 1usize);
-    }
-
-    // This is confusing and I'm only about 98% sure on how I fixed it.
-    // Basically, s is the path, and user_input the user input...
-    // I need to work on my naming practices!
-    'path:
-    for c in s.chars() {
-
-        let mut current_ui_char = if let Some(c) = user_input.chars().nth(input_idx) {
-            c
-        }
-        else {
-            break;
-        };
-
-        while unsafe { IGNORE_WHITESPACE } && current_ui_char.is_whitespace() && input_idx < user_input.len() {
-            input_idx += 1;
-            current_ui_char = if let Some(c) = user_input.chars().nth(input_idx) {
-                c
-            }
-            else {
-                break 'path;
-            };
-        }
-
-        if input_idx >= user_input.len() {
-            break;
-        }
-
-        if c == user_input.chars().nth(input_idx).unwrap() {
-            input_idx += 1;
-            last_hit = true;
-            seq_len += 1;
-        }
-        else {
-            seq_len = 0;
-            last_hit = false;
-        }
-
-        if last_hit {
-            score *= seq_len.max(2);
-        }
-    }
-
-    return (input_idx == user_input.len(), score);
-}
-
 #[test]
-pub fn test_fzf_v2() {
+pub fn test_fzf() {
     let ui = "aocone.rs";
     let path = "aoc-2023/asset/input-one.txt";
 
@@ -402,7 +345,7 @@ pub fn test_fzf_v2() {
     unsafe {
         USER_INPUT = ui.into();
     }
-    let (ok, score) = fzf_v2(path);
+    let (ok, score) = fzf(path);
 
     if ok {
         println!("Input '{}' matches '{}' with a score of {}", ui, path, score);

@@ -101,6 +101,9 @@ set_vim_binds(b) {
     Hotkey(settings.vim.edit_file, vim_edit_file, s)
     Hotkey(settings.vim.yank_path, vim_yank_path, s)
     Hotkey(settings.vim.yank_name, vim_yank_name, s)
+
+    ; Focus the first item
+    vim_go_down()
 }
 
 PERF_X := PADDING
