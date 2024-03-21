@@ -1,10 +1,11 @@
 use std::{fmt::Display, fs};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum FileMode {
     File,
     Dir,
     Link,
+    Any,
 }
 
 impl Display for FileMode {
@@ -13,6 +14,7 @@ impl Display for FileMode {
             Self::Dir => "Dir",
             Self::File => "File",
             Self::Link => "Link",
+            Self::Any => "Any",
         });
         Ok(())
     }
@@ -24,6 +26,7 @@ impl FileMode {
             Self::Dir => 0,
             Self::File => 1,
             Self::Link => 2,
+            Self::Any => 4,
         }
     }
 
@@ -32,6 +35,7 @@ impl FileMode {
             0 => Self::Dir,
             1 => Self::File,
             2 => Self::Link,
+            4 => Self::Any,
             _ => panic!("Invalid file mode as integer {}", value),
         }
     }
@@ -232,20 +236,54 @@ pub extern "C" fn set_user_input(mut s: *mut u8, len: isize) {
 
 pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data>, matches: &mut Vec<String>) {
 
-    let user_input = unsafe { &USER_INPUT };
+    let user_input: String = unsafe {
+        let new_ui = if IGNORE_CASE {
+            USER_INPUT.clone().to_lowercase()
+        }
+        else {
+            USER_INPUT.clone()
+        };
+
+        if new_ui.starts_with(":f") || new_ui.starts_with(":l") || new_ui.starts_with(":d") {
+            new_ui.chars().skip(2).collect::<String>()
+        }
+        else {
+            new_ui
+        }
+    };
+
+    let mode = if unsafe { &USER_INPUT }.starts_with(":f") {
+        FileMode::File
+    }
+    else if unsafe { &USER_INPUT }.starts_with(":l") {
+        FileMode::Link
+    }
+    else if unsafe { &USER_INPUT }.starts_with(":d") {
+        FileMode::Dir
+    }
+    else {
+        FileMode::Any
+    };
 
     for (i, real_path) in paths.iter().enumerate() {
-        let path = if unsafe { IGNORE_CASE } {
-            unsafe {
-                USER_INPUT = USER_INPUT.to_lowercase();
+
+        if let Some(dat) = datas.get(i) {
+            if mode != FileMode::Any && FileMode::from_usize(dat.file_type) != mode {
+                continue;
             }
+        }
+        else {
+            continue;
+        }
+
+        let path = if unsafe { IGNORE_CASE } {
             real_path.to_string().to_lowercase()
         }
         else {
             real_path.to_string()
         };
 
-        let the_actual_real_thing_to_match = if unsafe { MATCH_PATH } {
+        let match_path = if unsafe { MATCH_PATH } {
             &path
         }
         else {
@@ -258,35 +296,35 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
 
         if unsafe { SUFFIX_FILTER } && user_input.ends_with('$') {
             let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
-            if the_actual_real_thing_to_match.ends_with(real_user_input) {
+            if match_path.ends_with(real_user_input) {
                 match_datas.push(datas.get(i).unwrap().clone());
-                matches.push(path);
+                matches.push(real_path.to_string());
             }
             continue;
         }
 
         if unsafe { CONTAINS_FILTER } && user_input.ends_with('?') {
             let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
-            if the_actual_real_thing_to_match.contains(real_user_input) {
+            if match_path.contains(real_user_input) {
                 match_datas.push(datas.get(i).unwrap().clone());
-                matches.push(path);
+                matches.push(real_path.to_string());
             }
             continue;
         }
 
-        let user_input_len = unsafe { &USER_INPUT }.len();
+        let user_input_len = user_input.len();
 
-        if user_input_len > path.len() {
+        if user_input_len > match_path.len() {
             continue;
         }
 
-        let (is_match, score) = fzf(the_actual_real_thing_to_match);
+        let (is_match, score) = fzf(match_path, &user_input);
 
         if !is_match {
             continue;
         }
 
-        matches.push(path);
+        matches.push(real_path.to_string());
         let mut data = datas.get(i).unwrap().clone();
         data.score = score;
         match_datas.push(data);
@@ -298,9 +336,9 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
 }
 
 
-pub fn fzf(path: &str) -> (bool, usize) {
+pub fn fzf(path: &str, user_input: &str) -> (bool, usize) {
 
-    let input = unsafe { &USER_INPUT };
+    let input = user_input;
     let mut input_idx = 0usize;
     let mut seq_len = 0usize;
     let mut score = 1usize;
@@ -342,10 +380,7 @@ pub fn test_fzf() {
     let path = "aoc-2023/asset/input-one.txt";
 
     set_ignore_whitespace(1);
-    unsafe {
-        USER_INPUT = ui.into();
-    }
-    let (ok, score) = fzf(path);
+    let (ok, score) = fzf(path, ui);
 
     if ok {
         println!("Input '{}' matches '{}' with a score of {}", ui, path, score);

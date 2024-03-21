@@ -19,6 +19,7 @@ git clone https://github.com/Fr4cK5/spear
     - To suffix match, just suffix your input with `$`
     - To search for all mp3 files in your file hierarchy, try this input `.mp3$`
     - Since all mp3 audio files end with an `.mp3`, this input will find them all
+    - Why is `$` the suffix of choice? Probably all `Regex` engines out there use it as their end-of-string character. Makes it a little more familiar.
 
 - Containment Matching
     - To containment-match, just suffix your input with `?`
@@ -29,6 +30,19 @@ git clone https://github.com/Fr4cK5/spear
         - `file?`
         - `me-fi?`
         - `le.t?`
+    - Why is `?` the suffix of choice? It works.
+
+- Filemode filtering
+    - You can filter for different types of filesystem entries using prefixes.
+        - Filter to only include files `:f`
+        - Filter to only include links `:l`
+        - Filter to only include directories `:d`
+    - This can be combined in multiple different ways
+        - Need to find a directory that fuzzily matches `myfile`? `:dmyfile`'s got you covered!
+        - Maybe you've got a file by the name `directory` together with a bunch of other directories. `:fdirectory?` will find it for you.
+    - Why did I choose `:` as the prefix?
+        - Makes for pretty good indicator that its a prefix
+        - The `:` characters is not permitted in filenames under windows
 
 # Usage
 
