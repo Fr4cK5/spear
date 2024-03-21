@@ -91,7 +91,7 @@ git clone https://github.com/Fr4cK5/spear
 
 # Acknowledgements
 
-Spear's config system would not have been possible without [GroggyOtter's](https://https://github.com/GroggyOtter) amazing JSON library [jsongo.ahk](https://github.com/GroggyOtter/jsongo_AHKv2).
+Spear's config system would not have been possible without [GroggyOtter's](https://github.com/GroggyOtter) amazing JSON library [jsongo.ahk](https://github.com/GroggyOtter/jsongo_AHKv2).
 Thank you for your dedication to the AHK-Community.
 
 # Thank you
