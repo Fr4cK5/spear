@@ -15,30 +15,16 @@ CoordMode("Mouse", "Screen")
 #Include ../lib/jsongo.v2.ahk
 
 #Include ../internal/FileHit.ahk
+#Include ../internal/Spear-GUI.ahk
 #Include Spear-FAL.ahk
 
 TraySetIcon("../asset/spear-icon.ico")
 
 SetWinDelay(-1)
 
-WIDTH := 800
-HEIGHT := 640
-PADDING := 20
-FONT_SIZE := 15
+spear_gui := SpearGUI.mk_gui()
 
-window := Gui("+ToolWindow -Caption -AlwaysOnTop")
-window.SetFont(Format("s{}", FONT_SIZE))
-
-INPUT_BOX_POS := PADDING
-INPUT_BOX_WIDTH := WIDTH - PADDING * 2 - 200
-INPUT_BOX_HEIGHT := 30
-input := window.AddEdit(Format("x{} y{} w{} h{}",
-    INPUT_BOX_POS,
-    INPUT_BOX_POS,
-    INPUT_BOX_WIDTH,
-    INPUT_BOX_HEIGHT
-))
-input.OnEvent("Change", auto_update_list)
+spear_gui.input.OnEvent("Change", auto_update_list)
 auto_update_list(obj, info) {
     while !cache_ready {
     }
@@ -48,40 +34,14 @@ auto_update_list(obj, info) {
     }
 }
 
-STATS_X := PADDING * 2 + INPUT_BOX_WIDTH
-STATS_Y := PADDING + 3
-STATS_WIDTH := WIDTH - STATS_X - PADDING
-STATS_HEIGHT := INPUT_BOX_HEIGHT
-stats := window.AddText(Format("x{} y{} w{} h{}",
-    STATS_X,
-    STATS_Y,
-    STATS_WIDTH,
-    STATS_HEIGHT
-), Format(""))
-
-LIST_SELECTION_IDX := -1
-LIST_X := PADDING
-LIST_Y := PADDING * 2 + INPUT_BOX_HEIGHT
-LIST_WIDTH := WIDTH - PADDING * 2
-LIST_HEIGHT := HEIGHT - PADDING * 2 - INPUT_BOX_HEIGHT - 80
-list := window.AddListView(Format("+Grid x{} y{} w{} h{}",
-    LIST_X,
-    LIST_Y,
-    LIST_WIDTH,
-    LIST_HEIGHT
-), ["Name", "Directory", "Type", "Score"])
-list.OnEvent("Click", handle_list_click)
-list.OnEvent("Focus", (*) => set_vim_binds(true))
-list.OnEvent("LoseFocus", (*) => set_vim_binds(false))
-list.OnEvent("ItemFocus", set_list_selection)
+spear_gui.list.OnEvent("Click", handle_list_click)
+spear_gui.list.OnEvent("Focus", (*) => set_vim_binds(true))
+spear_gui.list.OnEvent("LoseFocus", (*) => set_vim_binds(false))
+spear_gui.list.OnEvent("ItemFocus", set_list_selection)
 set_list_selection(_, item) {
     global
     LIST_SELECTION_IDX := item
 }
-
-list.ModifyCol(1, LIST_WIDTH / 3)
-list.ModifyCol(2, LIST_WIDTH / 2 - 5)
-list.ModifyCol(3, LIST_WIDTH / 6)
 
 set_vim_binds(b) {
     ; Setting? Vim!!! (bindings)
@@ -106,55 +66,17 @@ set_vim_binds(b) {
     vim_go_down()
 }
 
-PERF_X := PADDING
-PERF_Y := HEIGHT - PADDING * 2 + 7 - 40
-PERF_WIDTH := WIDTH - PADDING * 2
-perf := window.AddText(Format("x{} y{} w{}",
-    PERF_X,
-    PERF_Y,
-    PERF_WIDTH
-), "")
-
-BUTTON_HEIGHT := 30
-BUTTON_WIDTH := 150
-
-FREE_X := PERF_X
-FREE_Y := PERF_Y + 30
-free_button := window.AddButton(Format("x{} y{} w{} h{}",
-    FREE_X,
-    FREE_Y,
-    BUTTON_WIDTH,
-    BUTTON_HEIGHT
-), "Free memory")
-free_button.OnEvent("click", free_button_callback)
+spear_gui.free_button.OnEvent("click", free_button_callback)
 free_button_callback(*) {
     lib.free_mem()
     clear_ui()
 }
 
-SELECT_X := FREE_X + BUTTON_WIDTH + PADDING
-SELECT_Y := FREE_Y
-SELECT_WIDTH := BUTTON_WIDTH
-select_dir := window.AddButton(Format("x{} y{} w{} h{}",
-    SELECT_X,
-    SELECT_Y,
-    SELECT_WIDTH,
-    BUTTON_HEIGHT
-), "Select Dir")
-select_dir.OnEvent("click", select_dir_callback)
+spear_gui.select_dir.OnEvent("click", select_dir_callback)
 select_dir_callback(*) {
     set_base_dir(DirSelect())
     SetTimer(() => fill_cache(), -1, 0x7fffffff)
 }
-
-NEW_PATH_X := SELECT_X + PADDING + BUTTON_WIDTH
-NEW_PATH_Y := FREE_Y
-NEW_PATH_WIDTH := 413
-new_path_label := window.AddEdit(Format("x{} y{} w{} +Disabled",
-    NEW_PATH_X + 7,
-    NEW_PATH_Y,
-    NEW_PATH_WIDTH
-), "")
 
 settings := load_settings()
 
@@ -180,8 +102,8 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
     }
 
     explorer_integration()
-    show_centered(window, WIDTH, HEIGHT)
-    input.Focus()
+    show_centered(spear_gui.window, spear_gui.WIDTH, spear_gui.HEIGHT)
+    spear_gui.input.Focus()
 }
 ; Ctrl Win K -> Open UI without checking for explorer
 ^#k::{
@@ -193,39 +115,39 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
         SetTimer(() => fill_cache(), -1, 0x7fffffff)
     }
 
-    show_centered(window, WIDTH, HEIGHT)
-    input.Focus()
+    show_centered(spear_gui.window, spear_gui.WIDTH, spear_gui.HEIGHT)
+    spear_gui.input.Focus()
 }
 
 ; Manually filter if the amount of found files is too large.
 ; You can adjust the maximum amount of items for auto-search in your config.json.
 ~*Enter:: {
-    if !WinActive(window) {
+    if !WinActive(spear_gui.window) {
         return
     }
-    if !input.Focused {
+    if !spear_gui.input.Focused {
         return
     }
 
-    find(input.Value)
+    find(spear_gui.input.Value)
 }
 
 vim_go_up(*) {
     global
-    if !list.Focused or LIST_SELECTION_IDX <= 0 {
+    if !spear_gui.list.Focused or LIST_SELECTION_IDX <= 0 {
         return
     }
 
-    ControlSend("{up}", list)
+    ControlSend("{up}", spear_gui.list)
 }
 
 vim_go_down(*) {
     global
-    if !list.Focused or LIST_SELECTION_IDX == -1 {
+    if !spear_gui.list.Focused or LIST_SELECTION_IDX == -1 {
         return
     }
 
-    ControlSend("{down}", list)
+    ControlSend("{down}", spear_gui.list)
 }
 
 vim_half_viewport_up(*) {
@@ -247,56 +169,56 @@ vim_top(*) {
 }
 
 vim_bot(*) {
-    loop list.GetCount() - LIST_SELECTION_IDX {
+    loop spear_gui.list.GetCount() - LIST_SELECTION_IDX {
         vim_go_down()
     }
 }
 
 vim_open_explorer(*) {
     global
-    if !list.Focused {
+    if !spear_gui.list.Focused {
         return
     }
 
-    path := list.GetText(LIST_SELECTION_IDX, 2)
-    mode := list.GetText(LIST_SELECTION_IDX, 3)
+    path := spear_gui.list.GetText(LIST_SELECTION_IDX, 2)
+    mode := spear_gui.list.GetText(LIST_SELECTION_IDX, 3)
     explorer_at(path, mode)
 }
 
 vim_edit_file(*) {
     global
-    if !list.Focused {
+    if !spear_gui.list.Focused {
         return
     }
 
-    path := list.GetText(LIST_SELECTION_IDX, 2)
-    mode := list.GetText(LIST_SELECTION_IDX, 3)
+    path := spear_gui.list.GetText(LIST_SELECTION_IDX, 2)
+    mode := spear_gui.list.GetText(LIST_SELECTION_IDX, 3)
     edit_file(path, mode)
 }
 
 vim_yank_path(*) {
     global
-    if !list.Focused {
+    if !spear_gui.list.Focused {
         return
     }
 
-    A_Clipboard := list.GetText(LIST_SELECTION_IDX, 2)
+    A_Clipboard := spear_gui.list.GetText(LIST_SELECTION_IDX, 2)
 }
 
 vim_yank_name(*) {
     global
-    if !list.Focused {
+    if !spear_gui.list.Focused {
         return
     }
 
-    A_Clipboard := list.GetText(LIST_SELECTION_IDX, 1)
+    A_Clipboard := spear_gui.list.GetText(LIST_SELECTION_IDX, 1)
 }
 
 ~Esc::hide_ui()
 
 hide_ui() {
     global
-    window.Hide()
+    spear_gui.window.Hide()
 
     ; setting? Clear everything upon hiding
     if settings.autoclear {
@@ -306,15 +228,15 @@ hide_ui() {
 
 clear_ui(lib_initialized := true, preserve_stats := false) {
     global
-    while list.Delete() {
+    while spear_gui.list.Delete() {
     }
-    input.Value := ""
-    perf.Value := ""
+    spear_gui.input.Value := ""
+    spear_gui.perf.Value := ""
     if !preserve_stats and lib_initialized and lib.found_files == 0 {
-        stats.Value := "No files indexed"
+        spear_gui.stats.Value := "No files indexed"
     }
     else {
-        stats.Value := ""
+        spear_gui.stats.Value := ""
     }
 }
 
@@ -442,10 +364,10 @@ set_base_dir(path) {
     cache_ready := false
 
     clear_ui(false)
-    new_path_label.Value := base_dir
+    spear_gui.new_path_label.Value := base_dir
 
     ; Scroll the end of the edit if the path happens to be longer than the control
-    ControlSend("{End}", new_path_label)
+    ControlSend("{End}", spear_gui.new_path_label)
 }
 
 fill_cache() {
@@ -460,7 +382,7 @@ fill_cache() {
     lib.free_mem()
     lib.ffi_walk(base_dir)
     cache_ready := true
-    stats.Value := Format("{} Files", lib.found_files)
+    spear_gui.stats.Value := Format("{} Files", lib.found_files)
 }
 
 find(s) {
@@ -469,9 +391,9 @@ find(s) {
     auto_free_timer.start()
 
     if Trim(s) == "" or lib.found_files == 0 {
-        while list.Delete() {
+        while spear_gui.list.Delete() {
         }
-        perf.Value := ""
+        spear_gui.perf.Value := ""
         return
     }
 
@@ -481,7 +403,7 @@ find(s) {
     t.start()
 
     LIST_SELECTION_IDX := -1
-    while list.Delete() {
+    while spear_gui.list.Delete() {
     }
 
     lib.ffi_filter()
@@ -489,12 +411,12 @@ find(s) {
 
     limited := lib.filtered_buffer_to_vec()
         .limit(settings.listviewlimit) ; setting? Limit
-        .foreach((_, item) => list.Add(, item.filename, item.path, get_pretty_mode(item.attr), item.score))
+        .foreach((_, item) => spear_gui.list.Add(, item.filename, item.path, get_pretty_mode(item.attr), item.score))
 
     hits := lib.matching_files
     showing := limited.len()
 
-    perf.Value := Format("Hits: {}/{}; Filtering: {}ms",
+    spear_gui.perf.Value := Format("Hits: {}/{}; Filtering: {}ms",
         hits,
         lib.found_files,
         filtering
@@ -527,9 +449,9 @@ edit_file(path, filemode) {
 }
 
 handle_list_click(obj, info) {
-    name := list.GetText(info, 1)
-    path := list.GetText(info, 2)
-    mode := list.GetText(info, 3)
+    name := spear_gui.list.GetText(info, 1)
+    path := spear_gui.list.GetText(info, 2)
+    mode := spear_gui.list.GetText(info, 3)
 
     ; Unsure if this makes things better or worse, but it works just fine!
     LIST_SELECTION_IDX := info
