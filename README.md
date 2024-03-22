@@ -108,7 +108,7 @@ In case you're wondering, the original `config.json` is my own.
     - `yank_path` Keybind to copy ("yank" in vim terminology) the item's path
     - `yank_name` Keybind to copy the item's name
 
-To change any of the config's values, just change them! They config files are located under `./config/`.
+To change any of the config's values, just change them! The config files are located under `./config/`.
 
 - Spear will try to decode two different files based on if they exist or not
     1. `config.json` Your config

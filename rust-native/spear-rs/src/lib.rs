@@ -376,8 +376,8 @@ pub fn fzf(path: &str, user_input: &str) -> (bool, usize) {
 
 #[test]
 pub fn test_fzf() {
-    let ui = "aocone.rs";
-    let path = "aoc-2023/asset/input-one.txt";
+    let ui = "main.rs";
+    let path = "C:/.dev/mc-modding/YarrakObama's MC-EasyMode/build/classes/java/main/net/yarrak/Main.class";
 
     set_ignore_whitespace(1);
     let (ok, score) = fzf(path, ui);

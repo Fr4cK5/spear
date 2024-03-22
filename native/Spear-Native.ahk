@@ -131,6 +131,7 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
     show_centered(spear_gui.window, spear_gui.WIDTH, spear_gui.HEIGHT)
     spear_gui.input.Focus()
 }
+
 ; Ctrl Win K -> Open UI without checking for explorer
 ^#k::{
     global
@@ -335,6 +336,7 @@ load_settings() {
     catch {
         settings_content := FileRead("../config/spear/config_default.json")
         settings := jsongo.Parse(settings_content)
+        SetTimer(() => MsgBox("Unable to parse or locate personal config file.`nFalling back to default config.`nFor more information, see https://github.com/Fr4cK5/spear#readme"), -1)
     }
 
     ; For the sake of autocomplete!
@@ -359,6 +361,7 @@ load_settings() {
             autofreebuffer: settings["native"]["autofreebuffer"], ; Automatically free the buffer and release the memory
             autofreetimeout: settings["native"]["autofreetimeout"], ; The time (seconds) Spear-Native must be in idle (you don't interact with it at all) to automatically free the buffers
         },
+        
         vim: { ; When filtering, use Tab to move focus to the listview. Here you'll be able to use vim bindings if you'd like.
             enabled: settings["vim"]["enabled"],
             list_up: settings["vim"]["list_up"],
