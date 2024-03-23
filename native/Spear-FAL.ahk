@@ -8,32 +8,6 @@
  * 
  * It builds an abstraction in between spearlib's native interface and AutoHotkey.
  * 
- * ```rust
- * pub struct Data {            // Size: 32 bytes
- *     pub path: *const String, // Offset: 0
- *     pub len: usize,          // Offset: 8
- *     pub score: usize,        // Offset: 16
- *     pub file_type: usize,    // Offset: 24, turns out: AHK doesn't like unaligned reads into char
- * }
- * 
- * pub enum FileMode {
- *     File,
- *     Dir,
- *     Link,
- *     Any,
- * }
- * 
- * impl FileMode {
- *     fn as_bytes(&self) -> u8 {
- *         return match self {
- *             Self::Dir => 0,
- *             Self::File => 1,
- *             Self::Link => 2,
- *             Self::Any => 4,
- *         }
- *     }
- * }
- * ```
  */
 class SpearFAL {
     #Requires AutoHotkey 2.0.2+
@@ -118,20 +92,21 @@ class SpearFAL {
         return b
     }
 
+    ; #[no_mangle]
+    ; pub extern "C" fn walk_ff(*mut Data, usize, *mut u16, usize, *mut u16) -> usize
     ffi_walk(working_dir) {
         this.check_valid()
 
         this.found_files := DllCall("spearlib\walk_ffi",
             "ptr", this.data_buf.Ptr,
-            "int64", this.data_buf.Size,
+            "uint64", this.data_buf.Size,
 
             "ptr", this.str_buf.Ptr,
-            "int64", this.str_buf.Size,
+            "uint64", this.str_buf.Size,
 
-            "ptr", this.as_buf_ansi(working_dir).Ptr,
-            "int64", StrLen(working_dir),
+            "wstr", working_dir,
 
-            "cdecl int64"
+            "cdecl uint64"
         )
     }
 
@@ -139,12 +114,12 @@ class SpearFAL {
         this.matching_files := DllCall("spearlib\filter_ffi",
 
             "ptr", this.data_buf.Ptr,
-            "int64", this.found_files,
+            "uint64", this.found_files,
 
             "ptr", this.filtered_data_buf.Ptr,
             "ptr", this.filtered_str_buf.Ptr,
 
-            "cdecl int64"
+            "cdecl uint64"
         )
     }
 
@@ -157,14 +132,14 @@ class SpearFAL {
         i := 0
         while i < this.matching_files {
             base := i * SpearFAL.SIZEOF_DATA
-            str_ptr := NumGet(this.filtered_data_buf, base, "ptr")
-            str_len := NumGet(this.filtered_data_buf, base + 8, "int64")
-            score := NumGet(this.filtered_data_buf, base + 16, "int64")
-            file_type := NumGet(this.filtered_data_buf, base + 24, "char")
-            str := StrGet(str_ptr, str_len, "cp0")
-            name := StrSplit(str, "/")[-1]
+            str_ptr := NumGet(this.filtered_data_buf, base + Data.path, "ptr")
+            str_len := NumGet(this.filtered_data_buf, base + Data.len, "int64")
+            score := NumGet(this.filtered_data_buf, base + Data.score, "int64")
+            file_mode := NumGet(this.filtered_data_buf, base + Data.file_mode, "uint64")
+            path := StrGet(str_ptr, str_len, "UTF-16")
+            name := StrSplit(path, "/")[-1]
 
-            hit := FileHit(name, str, file_type)
+            hit := FileHit(name, path, file_mode)
             hit.score := score
             v.push(hit)
             i++
@@ -182,39 +157,54 @@ class SpearFAL {
         i := 0
         while i < this.found_files {
             base := i * SpearFAL.SIZEOF_DATA
-            str_ptr := NumGet(this.data_buf, base, "ptr")
-            str_len := NumGet(this.data_buf, base + 8, "int64")
-            file_type := NumGet(this.filtered_data_buf, base + 24, "char")
-            str := StrGet(str_ptr, str_len, "cp0")
-            name := StrSplit(str, "/")[-1]
+            str_ptr := NumGet(this.data_buf, base + Data.path, "ptr")
+            str_len := NumGet(this.data_buf, base + Data.len, "int64")
+            file_mode := NumGet(this.filtered_data_buf, base + Data.file_mode, "uint64")
+            path := StrGet(str_ptr, str_len, "UTF-16")
+            name := StrSplit(path, "/")[-1]
 
-            v.push(FileHit(name, str, file_type))
+            v.push(FileHit(name, path, file_mode))
             i++
         }
 
         return v
     }
 
+    ; #[no_mangle]
+    ; pub extern "C" fn set_user_input(s: *mut u16)
     set_user_input(s) {
         DllCall("spearlib\set_user_input",
-            "ptr", this.as_buf_ansi(s).Ptr,
-            "int64", StrLen(s),
+            "wstr", s,
 
             "cdecl"
         )
     }
+    ; #[no_mangle]
+    ; pub extern "C" fn set_ignore_case(isize)
     set_ignore_case(b) {
         DllCall("spearlib\set_ignore_case", "int64", b)
     }
+
+    ; #[no_mangle]
+    ; pub extern "C" fn set_suffix_filter(isize)
     set_suffix_filter(b) {
         DllCall("spearlib\set_suffix_filter", "int64", b)
     }
+
+    ; #[no_mangle]
+    ; pub extern "C" fn set_contains_filter(isize)
     set_contains_filter(b) {
         DllCall("spearlib\set_contains_filter", "int64", b)
     }
+
+    ; #[no_mangle]
+    ; pub extern "C" fn set_match_path(isize)
     set_match_path(b) {
         DllCall("spearlib\set_match_path", "int64", b)
     }
+
+    ; #[no_mangle]
+    ; pub extern "C" fn set_ignore_whitespace(isize)
     set_ignore_whitespace(b) {
         DllCall("spearlib\set_ignore_whitespace", "int64", b)
     }
@@ -236,4 +226,47 @@ class SpearFAL {
         this.found_files := 0
         this.matching_files := 0
     }
+
+
 }
+
+/**
+ * ```rust
+ * #[Repr(C)]
+ * pub struct Data {            // Size: 32 bytes
+ *     pub path: *mut u32,      // Offset: 0
+ *     pub len: usize,          // Offset: 8
+ *     pub score: usize,        // Offset: 16
+ *     pub file_mode: usize,    // Offset: 24, turns out: AHK doesn't like unaligned reads into char
+ * }
+ * ```
+ */
+class Data {
+    static path := 0
+    static len := 8
+    static score := 16
+    static file_mode := 24
+}
+
+/**
+ * Don't need it in AHK, still good to have for debugging.
+ * ```rust
+ * pub enum FileMode {
+ *     File,
+ *     Dir,
+ *     Link,
+ *     Any,
+ * }
+ * 
+ * impl FileMode {
+ *     fn as_bytes(&self) -> u8 {
+ *         return match self {
+ *             Self::Dir => 0,
+ *             Self::File => 1,
+ *             Self::Link => 2,
+ *             Self::Any => 4,
+ *         }
+ *     }
+ * }
+ * ```
+ */

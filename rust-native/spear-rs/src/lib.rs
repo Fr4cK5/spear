@@ -48,27 +48,27 @@ pub struct FileHit {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct Data {
-    pub path: *const String,
+    pub path: *mut u16,
     pub len: usize,
     pub score: usize,
     pub file_type: usize,
 }
 
 #[no_mangle]
-pub extern "C" fn walk_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u8, strs_len: usize, mut wd_ptr: *mut u8, wd_len: isize) -> usize {
+pub extern "C" fn walk_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u16, strs_len: usize, working_dir_ptr: *mut u16) -> usize {
 
-    let mut wd_str = String::new();
-    unsafe {
-        for _ in 0..wd_len {
-            wd_str.push(wd_ptr.read() as char);
-            wd_ptr = wd_ptr.add(1);
-        }
-    };
+    // Working dir
+    let working_dir_str = string_from_wstr(working_dir_ptr);
+    dbg!(&working_dir_str);
 
+    // walk the file-system tree with the working-dir as the root
     let mut files = Vec::new();
-    walk(&wd_str, &mut files);
+    walk(&working_dir_str, &mut files);
 
+    // These are to compare against the buffers size-bounds.
+    // If we run out of memory, we won't get an access violation, instead just stop doing what we're doing
     let base_dat = dat;
     let base_strs = strs;
 
@@ -79,18 +79,18 @@ pub extern "C" fn walk_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u8
             }
             unsafe {
                 let path = item.path.to_string();
-                let len = item.path.len();
+                let len = path.chars().count();
                 let ptr = strs;
                 path.chars()
                     .for_each(|c| {
                         if strs as usize >= base_strs as usize + strs_len {
                             return;
                         }
-                        strs.write(c as u8);
+                        strs.write(c as u16);
                         strs = strs.add(1);
                     });
 
-                dat.write_unaligned(Data { path: ptr as *const String, len, score: 0, file_type: item.mode.as_usize() });
+                dat.write_unaligned(Data { path: ptr, len, score: 0, file_type: item.mode.as_usize() });
                 dat = dat.add(1);
             }
         });
@@ -103,7 +103,7 @@ pub extern "C" fn walk_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u8
 }
 
 #[no_mangle]
-pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: isize, mut dat_filtered: *mut Data, mut str_filtered: *mut u8) -> usize {
+pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: usize, mut dat_filtered: *mut Data, mut str_filtered: *mut u16) -> usize {
 
     let mut datas = Vec::new();
     let mut strings = Vec::new();
@@ -115,17 +115,19 @@ pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: isize, mut dat_filt
             }
 
             let data = dat.read();
-            
-            let mut buf = String::new();
-            let mut byte_ptr = data.path as *mut u8;
 
-            if byte_ptr.is_null() {
+            let mut buf = String::new();
+            let mut dword_ptr = data.path;
+
+            if dword_ptr.is_null() {
                 continue;
             }
 
             for _ in 0..data.len {
-                buf.push(byte_ptr.read() as char);
-                byte_ptr = byte_ptr.add(1);
+                if let Some(value) = char::from_u32(dword_ptr.read() as u32) {
+                    buf.push(value);
+                    dword_ptr = dword_ptr.add(1);
+                }
             }
 
             datas.push(data);
@@ -146,9 +148,11 @@ pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: isize, mut dat_filt
             dat_filtered.write_unaligned(data.clone());
             dat_filtered = dat_filtered.add(1);
 
+            // Must be valid since we iterator over the datas.
+            // the datas length must at all times match the strs length.
             out_strs.get(i).unwrap().chars()
                 .for_each(|c| {
-                    str_filtered.write_unaligned(c as u8);
+                    str_filtered.write_unaligned(c as u16);
                     str_filtered = str_filtered.add(1);
                 });
         }
@@ -160,11 +164,13 @@ pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: isize, mut dat_filt
 pub fn walk(path: &str, v: &mut Vec<FileHit>) {
     if let Ok(dir) = fs::read_dir(path) {
         dir.for_each(|item| {
-            if item.is_err() {
-                return;
+            let file = if let Ok(f) = item {
+                f
             }
+            else {
+                return;
+            };
 
-            let file = item.unwrap();
             let file_name = file.file_name().to_string_lossy().to_string();
 
             let mut new_path: String = path.to_string();
@@ -222,15 +228,9 @@ pub extern "C" fn set_ignore_whitespace(value: isize) {
     }
 }
 #[no_mangle]
-pub extern "C" fn set_user_input(mut s: *mut u8, len: isize) {
+pub extern "C" fn set_user_input(s: *mut u16) {
     unsafe {
-        let mut buf = String::new();
-        for _ in 0..len {
-            buf.push(s.read() as char);
-            s = s.add(1);
-        }
-
-        USER_INPUT = buf;
+        USER_INPUT = string_from_wstr(s);
     }
 }
 
@@ -252,17 +252,11 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
         }
     };
 
-    let mode = if unsafe { &USER_INPUT }.starts_with(":f") {
-        FileMode::File
-    }
-    else if unsafe { &USER_INPUT }.starts_with(":l") {
-        FileMode::Link
-    }
-    else if unsafe { &USER_INPUT }.starts_with(":d") {
-        FileMode::Dir
-    }
-    else {
-        FileMode::Any
+    let mode = match unsafe { &USER_INPUT }.chars().take(2).collect::<String>().as_str() {
+        ":f" => FileMode::File,
+        ":l" => FileMode::Link,
+        ":d" => FileMode::Dir,
+        _ => FileMode::Any,
     };
 
     for (i, real_path) in paths.iter().enumerate() {
@@ -271,10 +265,7 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
             if mode != FileMode::Any && FileMode::from_usize(dat.file_type) != mode {
                 continue;
             }
-        }
-        else {
-            continue;
-        }
+        };
 
         let path = if unsafe { IGNORE_CASE } {
             real_path.to_string().to_lowercase()
@@ -291,12 +282,14 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
             if parts.is_empty() {
                 continue;
             }
+            // This must be valid 
             *parts.last().unwrap()
         };
 
         if unsafe { SUFFIX_FILTER } && user_input.ends_with('$') {
             let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
             if match_path.ends_with(real_user_input) {
+                // datas[i] is valid at this point
                 match_datas.push(datas.get(i).unwrap().clone());
                 matches.push(real_path.to_string());
             }
@@ -306,6 +299,7 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
         if unsafe { CONTAINS_FILTER } && user_input.ends_with('?') {
             let real_user_input = &user_input.chars().take(user_input.len() - 1).collect::<String>();
             if match_path.contains(real_user_input) {
+                // datas[i] is valid at this point
                 match_datas.push(datas.get(i).unwrap().clone());
                 matches.push(real_path.to_string());
             }
@@ -318,16 +312,13 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
             continue;
         }
 
-        let (is_match, score) = fzf(match_path, &user_input);
-
-        if !is_match {
-            continue;
+        if let Some(score) = fzf(match_path, &user_input) {
+            matches.push(real_path.to_string());
+            // datas[i] is valid at this point
+            let mut data = datas.get(i).unwrap().clone();
+            data.score = score as usize;
+            match_datas.push(data);
         }
-
-        matches.push(real_path.to_string());
-        let mut data = datas.get(i).unwrap().clone();
-        data.score = score;
-        match_datas.push(data);
     }
 
     match_datas.sort_by(|a, b| {
@@ -336,27 +327,28 @@ pub fn filter(datas: &Vec<Data>, paths: &Vec<String>, match_datas: &mut Vec<Data
 }
 
 
-pub fn fzf(path: &str, user_input: &str) -> (bool, usize) {
+pub fn fzf(path: &str, user_input: &str) -> Option<isize> {
 
     let input = user_input;
     let mut input_idx = 0usize;
-    let mut seq_len = 0usize;
-    let mut score = 1usize;
+    let mut seq_len = 0isize;
+    let mut score = 1isize;
 
-    if input.len() == 0 || input.trim() == "" {
-        return (false, 1usize);
+    if input.trim().len() == 0 {
+        return None;
     }
 
     let input = input.chars()
-        .map(|c| c as u8)
         .collect::<Vec<_>>();
 
     for c in path.chars() {
         if input_idx >= input.len() {
             break;
         }
+
+        seq_len = seq_len.max(0);
         
-        if c == input[input_idx] as char {
+        if c == input[input_idx] {
             input_idx += 1;
 
             while unsafe { IGNORE_WHITESPACE } && input_idx < input.len() && input[input_idx].is_ascii_whitespace() {
@@ -367,26 +359,56 @@ pub fn fzf(path: &str, user_input: &str) -> (bool, usize) {
             score *= seq_len.max(2);
         }
         else {
-            seq_len = 0;
+            seq_len -= 1;
         }
     }
 
-    return (input_idx == input.len(), score);
+    if input_idx == input.len() {
+        return Some(score);
+    }
+
+    return None;
 }
 
 #[test]
 pub fn test_fzf() {
     let ui = "main.rs";
-    let path = "C:/.dev/mc-modding/YarrakObama's MC-EasyMode/build/classes/java/main/net/yarrak/Main.class";
-
     set_ignore_whitespace(1);
-    let (ok, score) = fzf(path, ui);
+    set_match_path(1);
 
-    if ok {
-        println!("Input '{}' matches '{}' with a score of {}", ui, path, score);
-    }
-    else {
-        println!("Input '{}' doesn't match '{}'", ui, path);
+    let paths = vec![
+        "C:/.dev/mc-modding/YarrakObama's MC-EasyMode/build/classes/java/main/net/yarrak/Main.class",
+        "C:/.dev/mc-modding/YarrakObama's MC-EasyMode/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-project-root/1.19.4-net.fabricmc.yarn.1_19_4.1.19.4+build.1-v2/minecraft-merged-project-root-1.19.4-net.fabricmc.yarn.1_19_4.1.19.4+build.1-v2-sources.jar",
+        "main.rs",
+        "main.go",
+        "fingerprint-mean-and-lean-windows-10-x86_64",
+    ];
+
+    println!("Input: {}", ui);
+
+    for path in paths.iter() {
+        let (ok, score) = fzf(path, ui);
+
+        if ok {
+            println!("\tMatch: '{}'\n\tScore: {}", path, score);
+        }
     }
 }
 
+pub fn string_from_wstr(mut base: *mut u16) -> String {
+    let mut buf = String::new();
+    unsafe {
+        loop {
+            let c = base.read();
+
+            if c == 0 {
+                break;
+            }
+
+            base = base.add(1);
+            buf.push(char::from_u32_unchecked(c as u32));
+        }
+    }
+
+    return buf;
+}
