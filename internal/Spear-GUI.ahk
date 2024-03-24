@@ -203,8 +203,6 @@ class SpearGUI {
             PADDING
         )
 
-        window.AddSlider
-
         config_matchpath := SpearGUI.add_checkbox_below(
             window,
             "Include the filepath in while matching",
