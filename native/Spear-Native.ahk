@@ -179,9 +179,9 @@ spear_gui.match_path_box.Value := settings.matchpath
 
 ~Esc::hide_ui()
 
-; Gui Callbacks
-; Gui Callbacks
-; Gui Callbacks
+; Vim GUI Callbacks
+; Vim GUI Callbacks
+; Vim GUI Callbacks
 
 vim_go_up(*) {
     global

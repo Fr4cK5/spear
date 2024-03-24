@@ -5,9 +5,10 @@ The only Fuzzy-Finder you'll need!
 ```bash
 git clone https://github.com/Fr4cK5/spear
 ```
-
-Make a copy of the file `./config/config_default.json` and name it `config.json`.
-Now you can safely edit your config while also having a fallback option.
+1. Do either of
+    - Start Spear `./native/Spear-Native.ahk`. Since there's no personal config file, it will automatically copy the default one.
+    - Make a copy of the file `./config/config_default.json` and name it `config.json`.
+1. Now you can safely edit your config while also having a fallback option.
 
 # Important
 
@@ -23,15 +24,22 @@ Now you can safely edit your config while also having a fallback option.
 - Fuzzy Matching
     - Fuzzy matching doesn't look for the exact input, but just for the containment of every character in the right order
     - Say you're searching for a `.png` image file
-    - An input of `.pg` would match `.png` because the input's characters are in the right order and all contained in the haystack `.png`
+    - An input of `HlWr!` would match `Hello, World!` because the input's characters are in the right order and all contained in the so-called haystack `Hello, World!`
     - `tfx` would successfully find `the-file.txt` since all the characters are contained and appear in the right order
-    - `xft` would not be found since the there's no `f` after the `x` meaning not all the characters are contained in the right order
+    - `xft` would not find `the-file.txt` since there's no `f` after the `x` meaning not all the characters are contained in the right order
+    - If you're using path-matching instead of just filename-matching, you can type out parts of the path and the filename to get ***potentially*** better results.
+        - For example, your input is `picfam01png`
+        - This would likely find
+            1. Pictures
+            1. Family Photos
+            1. Photo-01.png
+        - If you're using the `ignorewhitespace` config you can also use an input like this `pic fam 01 png`
 
 - Suffix Matching
     - To suffix match, just suffix your input with `$`.
     - To search for all mp3 files in your file hierarchy, try this input `.mp3$`
     - Since all mp3 audio files end with an `.mp3` this input will find them all
-    - Why is `$` the suffix of choice? Probably all `regex` engines out there use it as their end-of-string character. Makes it a little more familiar :)
+    - Why is `$` the suffix of choice? Probably all [regex](https://en.wikipedia.org/wiki/Regular_expression) engines out there use it as their end-of-string character. this just makes it a little more familiar :)
 
 - Containment Matching
     - To containment-match, just suffix your input with `?`
@@ -75,7 +83,7 @@ Now you can safely edit your config while also having a fallback option.
 
 # Configuration
 
-**All of this would not have been possible without GroggyOtter's JSON parsing library: `jsongo.ahk`**
+**All of this would not have been possible without GroggyOtter's JSON parsing library: `jsongo.ahk`.**
 
 **Note: Some values contain a `{}`. This is a placeholder for a dynamically generated value. Do not remove it. Any text outside of it however can be changed.**
 
@@ -115,6 +123,7 @@ To change any of the config's values, just change them! The config files are loc
 - Spear will try to decode two different files based on if they exist or not
     1. `config.json` Your config
     1. `config_default.json` Fallback default config
+        - If the fallback config is loaded, you'll get a message telling you
 
 If both the files don't exist, the process will exit with an error.
 
@@ -127,6 +136,10 @@ If both the files don't exist, the process will exit with an error.
 
 Thank you for your dedication to the AHK-Community.
 
+# Possible future additions
+
+- An in-app config menu! (Needs some more GUI-redesigning)
+
 # Thank you
 
-Thank you for checking out my project, hope you liked it!
+Thank you for checking out my project, hope you like it!
