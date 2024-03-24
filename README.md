@@ -148,9 +148,13 @@ If both the files don't exist, the process will exit with an error.
 
 Thank you for your dedication to the AHK-Community.
 
+# A Screenshot cause why not?
+
+![asset/spear-in-action.png](asset/spear-in-action.png)
+
 # Possible future additions
 
-- An in-app config menu! (Needs some more GUI-redesigning)
+- An in-app config menu! (Needs some more redesigning as of right now)
 
 # Thank you
 
