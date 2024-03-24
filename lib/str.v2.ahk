@@ -10,7 +10,7 @@
 #Include option.v2.ahk
 
 class Str {
-    #Requires AutoHotkey 2.0.2+
+    #Requires AutoHotkey v2.0.2+
 
     /**
      * Check if `idx` is within the bounds of `s`
@@ -48,7 +48,7 @@ class Str {
     }
 
     /**
-     * Get the char at a specific index in `s`. Only use this in istuations where you know you won't be going out of bounds.
+     * Get the char at a specific index in `s`. Only use this in situations where you know you won't be going out of bounds.
      * eg. parsing a string in a loop
      * @param s the string
      * @param index the index
@@ -356,7 +356,7 @@ class Str {
         if len <= 0 {
             return Option.none()
         }
-        return Option.of(this.char(s, 1).unwrap())
+        return this.char(s, 1)
     }
     
     /**
@@ -369,7 +369,7 @@ class Str {
         if len <= 0 {
             return Option.none()
         }
-        return Option.of(this.char(s, StrLen(s)).unwrap())
+        return this.char(s, len)
     }
     
     /**
@@ -422,5 +422,134 @@ class Str {
      */
     static replaceAll(str, old, new) {
         return StrReplace(str, old, new)
+    }
+
+    /**
+     * Check if the first character of `str` is a decimal (Base 10) digit
+     * @param str the string
+     * @returns {Bool}
+     */
+    static isDigit(str) {
+        len := StrLen(str)
+        if len <= 0 {
+            return false
+        }
+        asc := Ord(str)
+        return asc > 47 and asc < 58
+    }
+
+    /**
+     * Check if the first character of `str` is a letter
+     * @param str the string
+     * @returns {Bool}
+     */
+    static isLetter(str) {
+        len := StrLen(str)
+        if len <= 0 {
+            return false
+        }
+        asc := Ord(str)
+        return (asc > 64 and asc < 91) or (asc > 96 and asc < 123)
+    }
+
+    /**
+     * Check if the first character of `str` is a visible character.
+     * 
+     * The first 32 characters of Ascii are invisible control characters, same with the very last one.
+     * @param str the string
+     * @returns {Bool}
+     */
+    static isVisibleChar(str) {
+        len := StrLen(str)
+        if len <= 0 {
+            return false
+        }
+        asc := Ord(str)
+        return asc > 31 and asc < 127
+    }
+
+    static __radix_parse_char_map := Map(
+        "0", 0,
+        "1", 1,
+        "2", 2,
+        "3", 3,
+        "4", 4,
+        "5", 5,
+        "6", 6,
+        "7", 7,
+        "8", 8,
+        "9", 9,
+        "a", 10,
+        "b", 11,
+        "c", 12,
+        "d", 13,
+        "e", 14,
+        "f", 15,
+        "g", 16,
+        "h", 17,
+        "i", 18,
+        "j", 19,
+        "k", 20,
+        "l", 21,
+        "m", 22,
+        "n", 23,
+        "o", 24,
+        "p", 25,
+        "q", 26,
+        "q", 27,
+        "r", 28,
+        "s", 29,
+        "t", 30,
+        "u", 31,
+        "v", 32,
+        "w", 33,
+        "x", 34,
+        "y", 35,
+        "z", 36,
+    )
+
+    /**
+     * Parse a string to an integer based on some radix or 'base'.
+     * The radix defaults to 10 as this represents decimal.
+     * 
+     * To parse different formats, use following radices
+     *  - Decimal       -> 10
+     *  - Hexadecimal   -> 16
+     *  - Binary        -> 2
+     *  - Octal         -> 8
+     * 
+     * The radix has two bounds however, both will return Option::None
+     *  - If the radix is less than 2 (eg. only allowing for 1 unique char '0') the result will always be zero and is thereby not permitted.
+     *  - If the radix is more than 36 the result is not parsable since the character range [0-9a-z] only consists of 36 unique characters.
+     *      - Uppercase and lowercase letters have the same value associated with them.
+     * @param s the string to parse
+     * @param radix the radix 
+     * @returns {Option<Integer>} 
+     */
+    static parseInt(s, radix := 10) {
+        if radix < 2 or radix > 36 {
+            return Option.none()
+        }
+
+        s := StrLower(s)
+        len := StrLen(s)
+
+        i := 1
+        res := 0
+        while i <= len {
+            char := Str.charUnsafe(s, i)
+            char_value := Str.__radix_parse_char_map[char]
+
+            if (Str.isDigit(char) or Str.isLetter(char)) and char_value < radix {
+                res := res * radix + char_value
+            }
+            else {
+                return Option.none()
+            }
+
+            i++
+        }
+
+        return Option.of(res)
     }
 }

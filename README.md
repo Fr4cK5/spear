@@ -81,6 +81,9 @@ git clone https://github.com/Fr4cK5/spear
     - All your configured keybinds will now be applied.
 - `Esc` Hide the UI
 
+***NOTE*** If you're somebody that types rather fast and the results seem to be incorrect, try pressing enter while the input is in focus.
+This has todo with the async nature of GUIs vs the blocking nature of a DllCall.
+
 # Configuration
 
 **All of this would not have been possible without GroggyOtter's JSON parsing library: `jsongo.ahk`.**
