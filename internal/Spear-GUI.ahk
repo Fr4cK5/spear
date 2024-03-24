@@ -69,10 +69,11 @@ class SpearGUI {
         ), "Select Dir")
 
         ; Config Menu
-        open_config_menu := window.AddButton(Format("xp y+m w{} h{}",
-            BUTTON_WIDTH,
-            BUTTON_HEIGHT
-        ), "Config")
+        ; TODO Re-enable me when you've got some working prototype 
+        ; open_config_menu := window.AddButton(Format("xp y+m w{} h{}",
+        ;     BUTTON_WIDTH,
+        ;     BUTTON_HEIGHT
+        ; ), "Config")
 
         ; Bottom Section
         ; Bottom Section
@@ -115,8 +116,8 @@ class SpearGUI {
         window := Gui("+Owner" owner_hwnd)
         window.SetFont("s" . FONT_SIZE)
 
-        window.MarginX := PADDING
-        window.MarginY := PADDING
+        window.MarginX := PADDING / 2
+        window.MarginY := PADDING / 2
 
         CONTENT_WIDTH := WIDTH - PADDING * 2
         LEFT_SIDE_WIDTH := CONTENT_WIDTH * .8
@@ -128,19 +129,123 @@ class SpearGUI {
 
         OFFSET_Y := 5
 
-        config_autoclear_checkbox := window.AddCheckbox(Format("xm ym w{} h{}",
+        ; Autoclear
+        config_autoclear_checkbox := SpearGUI.add_checkbox_below(
+            window,
+            "Automatically clear the ui after interaction",
+            config.autoclear,
+            CONTENT_WIDTH
+        )
+
+        ; Show full dir
+        config_showfulldir := SpearGUI.add_checkbox_below(
+            window,
+            "Show the full filepath in the list",
+            config.showfulldir,
+            CONTENT_WIDTH
+        )
+
+        ; Listview limit
+        config_listviewlimit := SpearGUI.add_edit_below(
+            window,
+            "Maximum amout of items in the list",
+            config.listviewlimit,
             CONTENT_WIDTH,
             PADDING
-        ), "Automatically clear the ui after interaction")
-        config_autoclear_checkbox.Value := config.autoclear
+        )
 
-        config_showfulldir := window.AddCheckbox("xp ym wp hp", "Automatically clear the ui after interaction")
-        config_showfulldir.Value := config.showfulldir
+        ; Match Ignorecase
+        config_ignorecase := SpearGUI.add_checkbox_below(
+            window,
+            "Ignore letter casing while matching",
+            config.matchignorecase,
+            CONTENT_WIDTH
+        )
+
+        ; Suffix search
+        config_dollarsuffix := SpearGUI.add_checkbox_below(
+            window,
+            "$ suffix is suffix-search",
+            config.dollarsuffixisendswith,
+            CONTENT_WIDTH
+        )
+
+        ; Containment search
+        config_qmsuffix := SpearGUI.add_checkbox_below(
+            window,
+            "? suffix is containment-search",
+            config.qmsuffixiscontains,
+            CONTENT_WIDTH
+        )
+
+        ; Ignore whitespace
+        config_ignore_whitespace := SpearGUI.add_checkbox_below(
+            window,
+            "Ignore input whitespace (fuzzy-mode)",
+            config.ignorewhitespace,
+            CONTENT_WIDTH
+        )
+
+        ; Hide after interaction
+        config_hide_after_interaction := SpearGUI.add_checkbox_below(
+            window,
+            "Hide the Spear window after interacting with it",
+            config.hideafteruiinteraction,
+            CONTENT_WIDTH
+        )
+
+        ; Hide after interaction
+        config_basedir := SpearGUI.add_edit_below(
+            window,
+            "Base directory",
+            config.basedir,
+            CONTENT_WIDTH,
+            PADDING
+        )
+
+        window.AddSlider
+
+        config_matchpath := SpearGUI.add_checkbox_below(
+            window,
+            "Include the filepath in while matching",
+            config.matchpath,
+            CONTENT_WIDTH
+        )
 
         return {
             window: window,
             config_autoclear_checkbox: config_autoclear_checkbox,
             config_showfulldir: config_showfulldir,
+            config_listviewlimit: config_listviewlimit,
+            config_ignorecase: config_ignorecase,
+            config_dollarsuffix: config_dollarsuffix,
+            config_qmsuffix: config_qmsuffix,
+            config_ignore_whitespace: config_ignore_whitespace,
+            config_hide_after_interaction: config_hide_after_interaction,
+            config_basedir: config_basedir,
+            config_matchpath: config_matchpath,
         }
     }
+
+    static add_edit_below(g, name, value, width, padding) {
+        g.AddText(Format("xm y+m w{} h30",
+            width * .75 - padding * 2
+        ), name)
+
+        edt := g.AddEdit(Format("x+m yp w{} h30",
+            width * .25 - padding
+        ), value)
+
+        return edt
+    }
+
+    static add_checkbox_below(g, name, value, width) {
+        cb := g.AddCheckbox(Format("xm y+m w{} h30",
+            width
+        ), name)
+        cb.Value := value
+
+        return cb
+    }
+
 }

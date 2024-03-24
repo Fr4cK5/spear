@@ -31,15 +31,15 @@ GUI_MAIN_HEIGHT := 700
 PADDING := 20
 FONT_SIZE := 15
 
+GUI_CONFIG_WIDTH := GUI_MAIN_WIDTH / 2
+GUI_CONFIG_HEIGHT := GUI_MAIN_HEIGHT
+
 main_gui := SpearGUI.main_gui(
     GUI_MAIN_WIDTH,
     GUI_MAIN_HEIGHT,
     PADDING,
     FONT_SIZE
 )
-
-GUI_CONFIG_WIDTH := GUI_MAIN_WIDTH / 2
-GUI_CONFIG_HEIGHT := GUI_MAIN_HEIGHT / 2
 
 main_gui.input.OnEvent("Change", auto_update_list)
 auto_update_list(obj, info) {
@@ -114,9 +114,20 @@ toggle_match_path(obj, _) {
     }
 }
 
-main_gui.open_config_menu.OnEvent("Click", open_config_menu)
+; TODO Config menu
+; NOTE I'll also need to re-enable the config-button in SpearGUI.new_main()
+; main_gui.open_config_menu.OnEvent("Click", open_config_menu)
 open_config_menu(*) {
-    static config_gui := SpearGUI.config_gui(
+    ToolTip("To be implemented")
+    SetTimer(() => ToolTip(), -3000)
+    if true { ; tHis LINe wILl neVER ExEcuTe
+        return
+    }
+
+    ; Hey you, if you find this, please read:
+    ; I'm not quite sure how to tacle this since there are a lot of settings.
+    ; I need some kind of scrollable ui area but that's rather... you know... hard with win32 GUIs
+    config_gui := SpearGUI.config_gui(
         main_gui.window.Hwnd,
         settings,
         GUI_CONFIG_WIDTH,
