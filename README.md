@@ -72,10 +72,19 @@ git clone https://github.com/Fr4cK5/spear
 
 - `LCtrl+LWin+L` Open the UI with explorer integration if enabled
 - `LCtrl+LWin+K` Open the UI without explorer integration
+- `LCtrl+F` Focus the search input
+- `LCtrl+M` Toggle path matching on the fly
 - Clicking
     - `LButton` Copy filepath to system clipboard
-    - `LCtrl+LButton` Open entry in Explorer. This can be toggled in the settings
+    - `LCtrl+LButton` Open entry in Explorer. This can be changed in the config
     - `LAlt+LButton` Execute the command set in the config with `{}` being replaced with the file's path
+    - `Clear Cache` This will clear all the cached files and directories to give the used memory back to the operating system
+    - `Refresh Cache` This will refresh the cache to account for new or deleted files. When the cache is cleared but you still want to search the same directory also press this button
+    - `Select Dir` Select another directory manually. As an alternative to this, you can just navigate to your desired directory and press LCtrl+LWin+L.
+        - ***NOTE*** The explorer integration feature only works in "non-library" directories. Windows library directories are "Documents", "Pictures", "This PC", ...
+        - Windows Explorer sadly doesn't print out the actual path but rather just "Documents", "Pictures", ...
+        - Any deeper nested directories eg. "C:/Users/You/Pictures/Famility Photos/" will however work
+
 - Vim-Mode
     - If you've enabled Vim-Mode, you can focus the list by pressing tab (assuming the input is currently focused.)
     - All your configured keybinds will now be applied.
