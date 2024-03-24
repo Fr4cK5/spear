@@ -14,8 +14,8 @@ CoordMode("Mouse", "Screen")
 #Include ../lib/files.v2.ahk
 #Include ../lib/jsongo.v2.ahk
 
-#Include ../internal/FileHit.ahk
-#Include ../internal/Spear-GUI.ahk
+#Include FileHit.ahk
+#Include Spear-GUI.ahk
 #Include Spear-FAL.ahk
 
 TraySetIcon("../asset/spear-icon.ico")
@@ -434,7 +434,6 @@ load_settings() {
         matchignorecase: settings["matchignorecase"], ; Ignore whether the input is uppercase or lowercase
         basedir: Str.replaceOne(settings["basedir"], "{}", A_UserName), ; Starting directory
         matchpath: settings["matchpath"], ; Incoperate the path to the file to actual matching
-        maxitemsforautoupdate: settings["maxitemsforautoupdate"], ; Maximum amount of items to automatically filter and update the list while typing making it feel "realtime" (reason: performance)
         integrations: {
             explorer: settings["integrations"]["explorer"], ; Enable the explorer integration
             editcmd: settings["integrations"]["editcmd"], ; The command to be executed when Opening a file from the UI's list via Ctrl+Left Click

@@ -1,7 +1,8 @@
-#Include ../internal/FileHit.ahk
 #Include ../lib/vec.v2.ahk
 #Include ../lib/option.v2.ahk
 #Include ../lib/result.v2.ahk
+
+#Include FileHit.ahk
 
 /**
  * The FAL or 'FFI Abstraction Layer' or 'Foreign-Function-Interface Abstraction Layer'

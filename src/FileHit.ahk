@@ -9,5 +9,4 @@ class FileHit {
         this.path := path
         this.attr := attr
     }
-
 }

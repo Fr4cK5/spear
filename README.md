@@ -6,34 +6,25 @@ The only Fuzzy-Finder you'll need!
 git clone https://github.com/Fr4cK5/spear
 ```
 1. Do either of
-    - Start Spear `./native/Spear-Native.ahk`. Since there's no personal config file, it will automatically copy the default one.
+    - Start Spear `./src/Spear.ahk`. Since there's no personal config file, it will automatically copy the default one.
     - Make a copy of the file `./config/config_default.json` and name it `config.json`.
 1. Now you can safely edit your config while also having a fallback option.
-
-# Important
-
-- Spear-Native `./native/Spear-Native.ahk` is the version you should be using
-- The normal version `./normal/Spear.ahk` is deprecated. If you use it, expect
-    - No further updates
-    - Less features
-    - Bugs
-    - Slow performance
 
 # Features
 
 - Fuzzy Matching
     - Fuzzy matching doesn't look for the exact input, but just for the containment of every character in the right order
     - Say you're searching for a `.png` image file
-    - An input of `HlWr!` would match `Hello, World!` because the input's characters are in the right order and all contained in the so-called haystack `Hello, World!`
+    - An input of `hlwr!` would match `hello, world!` because the input's characters are in the right order and are all contained in the so-called haystack `hello, world!`
     - `tfx` would successfully find `the-file.txt` since all the characters are contained and appear in the right order
     - `xft` would not find `the-file.txt` since there's no `f` after the `x` meaning not all the characters are contained in the right order
     - If you're using path-matching instead of just filename-matching, you can type out parts of the path and the filename to get ***potentially*** better results.
-        - For example, your input is `picfam01png`
+        - For example, your input is `picfampho01png`
         - This would likely find
-            1. Pictures
-            1. Family Photos
-            1. Photo-01.png
-        - If you're using the `ignorewhitespace` config you can also use an input like this `pic fam 01 png`
+            1. **Pic**tures
+            1. **Fam**ily **Pho**tos
+            1. Photo-**01**.**png**
+        - If you're using the `ignorewhitespace` config you can also use an input like this `pic fam pho 01 png`
 
 - Suffix Matching
     - To suffix match, just suffix your input with `$`.
@@ -46,16 +37,14 @@ git clone https://github.com/Fr4cK5/spear
     - You might have some file who's name you just barely remember, right?
     - Assuming the file is called `some-file.txt` any of the following inputs would find it
         - `some-file.txt?`
-        - `some?`
         - `file?`
         - `me-fi?`
-        - `le.t?`
     - Why is `?` the suffix of choice? It works
 
 - Filemode filtering
     - You can filter for different types of filesystem entries using prefixes
         - Filter to only include files `:f`
-        - Filter to only include links `:l`
+        - Filter to only include [sym-links](https://en.wikipedia.org/wiki/Symbolic_link) `:l`
         - Filter to only include directories `:d`
     - This can be combined in multiple different ways
         - Need to find a directory that fuzzily matches `myfile`? `:dmyfile`'s got you covered!
@@ -64,14 +53,14 @@ git clone https://github.com/Fr4cK5/spear
         - Makes for pretty good indicator that its a prefix
         - The `:` characters is not permitted in filenames under windows
 
-- Toggle path matching: You can choose to
+- Path matching: You can choose to
     - Only use each item's name: "config.json"
     - Use it's full path: "C:/Users/You/Pictures/Family-Photo.jpeg"
 
 # Usage
 
 - `LCtrl+LWin+L` Open the UI with explorer integration if enabled
-- `LCtrl+LWin+K` Open the UI without explorer integration
+- `LCtrl+LWin+K` Open the UI without explorer integration, regardless of your config
 - `LCtrl+F` Focus the search input
 - `LCtrl+M` Toggle path matching on the fly
 - Clicking
@@ -109,15 +98,14 @@ This has todo with the async nature of GUIs vs the blocking nature of a DllCall.
 - `matchignorecase` Ignore whether any input's characters are uppercase or lowercase when filtering
 - `basedir` Starting directory
 - `matchpath` Incorperate the path to the file in the filtering process
-- `maxitemsforautoupdate` Maximum amount of items to automatically filter and update the list while typing making it feel "realtime"
-- `integrations`
+- `integrations` Integration specific settings
     - `explorer` Enable the explorer integration
     - `editcmd` The command to be executed when opening a file from the UI's list via `LAlt+LButton` or `f` in Vim-Mode
-- `native` How many items the list view can display at a time
-    - `maxitemsforautoupdate` Same as above. This value overrides the one above if you're using `Spear-Native`
+- `native` Native library specific settings
+    - `maxitemsforautoupdate` Maximum amount of items to automatically filter and update the list while typing making it feel "realtime"
     - `autofreebuffer` Automatically free the buffer and release the memory
-    - `autofreetimeout` The time (seconds) `Spear-Native` must be in idle (on user-interaction) to automatically free the buffers
-- `vim`
+    - `autofreetimeout` The time (seconds) `Spear` must be in idle (on user-interaction) to automatically free the buffers
+- `vim` List Vim-mode specific settings
     - `enabled` Enable vim keybinds when the list view is in focus. This will disable the "find item via pressing the first letter of its name" feature.
     - `list_up` Keybind to go up
     - `list_down` Keybind to go down
@@ -133,9 +121,9 @@ This has todo with the async nature of GUIs vs the blocking nature of a DllCall.
 To change any of the config's values, just change them! The config files are located under `./config/`.
 
 - Spear will try to decode two different files based on if they exist or not
-    1. `config.json` Your config
+    1. `config.json` Your personal config
     1. `config_default.json` Fallback default config
-        - If the fallback config is loaded, you'll get a message telling you
+        - If the fallback config is loaded you'll get a message telling you
 
 If both the files don't exist, the process will exit with an error.
 

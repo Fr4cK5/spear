@@ -13,7 +13,6 @@
     "hideafteruiinteraction": true,
     "basedir": "C:/Users/{}/Documents",
     "matchpath": false,
-    "maxitemsforautoupdate": 1000,
     "native": {
         "maxitemsforautoupdate": 50000,
         "autofreebuffer": true,
