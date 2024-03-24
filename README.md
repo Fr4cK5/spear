@@ -95,7 +95,7 @@ This has todo with the async nature of GUIs vs the blocking nature of a DllCall.
 
 # Configuration
 
-**All of this would not have been possible without GroggyOtter's JSON parsing library: `jsongo.ahk`.**
+**All of this would not have been possible without [GroggyOtter's](https://github.com/GroggyOtter) JSON parsing library: [jsongo.ahk](https://github.com/GroggyOtter/jsongo_AHKv2).**
 
 **Note: Some values contain a `{}`. This is a placeholder for a dynamically generated value. Do not remove it. Any text outside of it however can be changed.**
 
