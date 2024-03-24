@@ -1,11 +1,9 @@
 class SpearGUI {
     #Requires AutoHotkey 2.0.2+
 
-    ; Okay listen. When I add more gui elements I will refactor this.
-    ; but for now, this does it's job just fine.
-    static new(WIDTH := 800, HEIGHT := 700, PADDING := 20, FONT_SIZE := 15) {
+    static main_gui(WIDTH := 950, HEIGHT := 700, PADDING := 20, FONT_SIZE := 15) {
         window := Gui("+ToolWindow -Caption -AlwaysOnTop")
-        window.SetFont(Format("s{}", FONT_SIZE))
+        window.SetFont("s" . FONT_SIZE)
 
         window.MarginX := PADDING
         window.MarginY := PADDING
@@ -110,6 +108,39 @@ class SpearGUI {
             new_path_label: new_path_label,
             match_path_checkbox: match_path_checkbox,
             open_config_menu: open_config_menu,
+        }
+    }
+
+    static config_gui(owner_hwnd, config, WIDTH := 950, HEIGHT := 700, PADDING := 20, FONT_SIZE := 15) {
+        window := Gui("+Owner" owner_hwnd)
+        window.SetFont("s" . FONT_SIZE)
+
+        window.MarginX := PADDING
+        window.MarginY := PADDING
+
+        CONTENT_WIDTH := WIDTH - PADDING * 2
+        LEFT_SIDE_WIDTH := CONTENT_WIDTH * .8
+        RIGHT_SIDE_WIDTH := CONTENT_WIDTH * .2
+        EDIT_HEIGHT := 30
+
+        BUTTON_HEIGHT := 35
+        BUTTON_WIDTH := RIGHT_SIDE_WIDTH - PADDING
+
+        OFFSET_Y := 5
+
+        config_autoclear_checkbox := window.AddCheckbox(Format("xm ym w{} h{}",
+            CONTENT_WIDTH,
+            PADDING
+        ), "Automatically clear the ui after interaction")
+        config_autoclear_checkbox.Value := config.autoclear
+
+        config_showfulldir := window.AddCheckbox("xp ym wp hp", "Automatically clear the ui after interaction")
+        config_showfulldir.Value := config.showfulldir
+
+        return {
+            window: window,
+            config_autoclear_checkbox: config_autoclear_checkbox,
+            config_showfulldir: config_showfulldir,
         }
     }
 }
