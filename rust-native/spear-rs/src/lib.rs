@@ -61,7 +61,6 @@ pub extern "C" fn walk_ffi(mut dat: *mut Data, dat_len: usize, mut strs: *mut u1
 
     // Working dir
     let working_dir_str = string_from_wstr(working_dir_ptr);
-    dbg!(&working_dir_str);
 
     // walk the file-system tree with the working-dir as the root
     let mut files = Vec::new();

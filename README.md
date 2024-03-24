@@ -6,12 +6,10 @@ The only Fuzzy-Finder you'll need!
 git clone https://github.com/Fr4cK5/spear
 ```
 
-Make a copy of the file `./config/config_default.json` and name it `config.json` overwriting the original one.
+Make a copy of the file `./config/config_default.json` and name it `config.json`.
 Now you can safely edit your config while also having a fallback option.
 
-In case you're wondering, the original `config.json` is my own.
-
-# Note
+# Important
 
 - Spear-Native `./native/Spear-Native.ahk` is the version you should be using
 - The normal version `./normal/Spear.ahk` is deprecated. If you use it, expect
@@ -33,7 +31,7 @@ In case you're wondering, the original `config.json` is my own.
     - To suffix match, just suffix your input with `$`.
     - To search for all mp3 files in your file hierarchy, try this input `.mp3$`
     - Since all mp3 audio files end with an `.mp3` this input will find them all
-    - Why is `$` the suffix of choice? Probably all `regex` engines out there use it as their end-of-string character. Makes it a little more familiar
+    - Why is `$` the suffix of choice? Probably all `regex` engines out there use it as their end-of-string character. Makes it a little more familiar :)
 
 - Containment Matching
     - To containment-match, just suffix your input with `?`
@@ -58,6 +56,10 @@ In case you're wondering, the original `config.json` is my own.
         - Makes for pretty good indicator that its a prefix
         - The `:` characters is not permitted in filenames under windows
 
+- Toggle path matching: You can choose to
+    - Only use each item's name: "config.json"
+    - Use it's full path: "C:/Users/You/Pictures/Family-Photo.jpeg"
+
 # Usage
 
 - `LCtrl+LWin+L` Open the UI with explorer integration if enabled
@@ -71,7 +73,7 @@ In case you're wondering, the original `config.json` is my own.
     - All your configured keybinds will now be applied.
 - `Esc` Hide the UI
 
-# Settings
+# Configuration
 
 **All of this would not have been possible without GroggyOtter's JSON parsing library: `jsongo.ahk`**
 

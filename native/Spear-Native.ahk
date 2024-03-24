@@ -96,6 +96,18 @@ refresh_cache(*) {
     SetTimer(() => fill_cache(), -1, 0x7fffffff)
 }
 
+spear_gui.match_path_box.OnEvent("Click", toggle_match_path)
+toggle_match_path(obj, state) {
+    lib.set_match_path(obj.Value)
+
+    while !cache_ready {
+    }
+
+    if lib.found_files <= settings.native.maxitemsforautoupdate {
+        find(spear_gui.input.Value)
+    }
+}
+
 ; Init
 ; Init
 ; Init
@@ -112,6 +124,12 @@ auto_free_timer := Timer()
 is_auto_freed := false
 
 SetTimer(() => fill_cache(), -1, 0x7fffffff)
+
+; Post Init Gui Update
+; Post Init Gui Update
+; Post Init Gui Update
+
+spear_gui.match_path_box.Value := settings.matchpath
 
 ; Hotkeys
 ; Hotkeys
@@ -334,9 +352,10 @@ load_settings() {
         settings := jsongo.Parse(settings_content)
     }
     catch {
-        settings_content := FileRead("../config/spear/config_default.json")
+        settings_content := FileRead("../config/config_default.json")
+        FileCopy("../config/config_default.json", "../config/config.json")
         settings := jsongo.Parse(settings_content)
-        SetTimer(() => MsgBox("Unable to parse or locate personal config file.`nFalling back to default config.`nFor more information, see https://github.com/Fr4cK5/spear#readme"), -1)
+        SetTimer(() => MsgBox("Unable to parse or locate personal config file.`nFalling back to default config.`nFor more information, see https://github.com/Fr4cK5/spear#readme under the Installation and/or Configuration section."), -1)
     }
 
     ; For the sake of autocomplete!
@@ -388,11 +407,11 @@ set_base_dir(path) {
     temp := Str.replaceAll(path, "\", "/")
 
     if Str.endsWith(temp, "*") {
-        temp := Str.sub(temp).unwrap()
+        temp := Str.sub(temp, , StrLen(temp)).unwrap()
     }
 
     if Str.endsWith(temp, "/") {
-        temp := Str.sub(temp).unwrap()
+        temp := Str.sub(temp, , StrLen(temp)).unwrap()
     }
 
     ; We only want to return after all the sanitizing has been done since

@@ -133,8 +133,8 @@ class SpearFAL {
         while i < this.matching_files {
             base := i * SpearFAL.SIZEOF_DATA
             str_ptr := NumGet(this.filtered_data_buf, base + Data.path, "ptr")
-            str_len := NumGet(this.filtered_data_buf, base + Data.len, "int64")
-            score := NumGet(this.filtered_data_buf, base + Data.score, "int64")
+            str_len := NumGet(this.filtered_data_buf, base + Data.len, "uint64")
+            score := NumGet(this.filtered_data_buf, base + Data.score, "uint64")
             file_mode := NumGet(this.filtered_data_buf, base + Data.file_mode, "uint64")
             path := StrGet(str_ptr, str_len, "UTF-16")
             name := StrSplit(path, "/")[-1]
@@ -158,7 +158,7 @@ class SpearFAL {
         while i < this.found_files {
             base := i * SpearFAL.SIZEOF_DATA
             str_ptr := NumGet(this.data_buf, base + Data.path, "ptr")
-            str_len := NumGet(this.data_buf, base + Data.len, "int64")
+            str_len := NumGet(this.data_buf, base + Data.len, "uint64")
             file_mode := NumGet(this.filtered_data_buf, base + Data.file_mode, "uint64")
             path := StrGet(str_ptr, str_len, "UTF-16")
             name := StrSplit(path, "/")[-1]

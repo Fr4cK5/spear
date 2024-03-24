@@ -65,6 +65,10 @@ class SpearGUI {
             BUTTON_HEIGHT
         ), "Select Dir")
 
+        match_path_box := window.AddCheckbox(Format("x+m yp h{}",
+            BUTTON_HEIGHT
+        ), "Match Filepath")
+
         ; Current path
         NEW_PATH_WIDTH := CONTENT_WIDTH - 1 ; I somehow saw the off-by-one-pixel and fixed it!
         new_path_label := window.AddEdit(Format("xm+1 y+{} w{} +Disabled",
@@ -87,6 +91,7 @@ class SpearGUI {
             select_dir: select_dir,
             refresh_cache: refresh_cache,
             new_path_label: new_path_label,
+            match_path_box: match_path_box,
         }
     }
 }

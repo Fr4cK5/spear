@@ -171,8 +171,10 @@ _load_settings() {
         settings := jsongo.Parse(settings_content)
     }
     catch {
-        settings_content := FileRead("../config/spear/config_default.json")
+        settings_content := FileRead("../config/config_default.json")
+        FileCopy("../config/config_default.json", "../config/config.json")
         settings := jsongo.Parse(settings_content)
+        SetTimer(() => MsgBox("Unable to parse or locate personal config file.`nFalling back to default config.`nFor more information, see https://github.com/Fr4cK5/spear#readme under the Installation and/or Configuration section."), -1)
     }
 
     ; For the sake of autocomplete!
