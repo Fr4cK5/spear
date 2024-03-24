@@ -147,7 +147,7 @@ pub extern "C" fn filter_ffi(mut dat: *mut Data, item_count: usize, mut dat_filt
             dat_filtered.write_unaligned(data.clone());
             dat_filtered = dat_filtered.add(1);
 
-            // Must be valid since we iterator over the datas.
+            // Must be valid since we iterate over the datas.
             // the datas length must at all times match the strs length.
             out_strs.get(i).unwrap().chars()
                 .for_each(|c| {
@@ -367,31 +367,6 @@ pub fn fzf(path: &str, user_input: &str) -> Option<isize> {
     }
 
     return None;
-}
-
-#[test]
-pub fn test_fzf() {
-    let ui = "main.rs";
-    set_ignore_whitespace(1);
-    set_match_path(1);
-
-    let paths = vec![
-        "C:/.dev/mc-modding/YarrakObama's MC-EasyMode/build/classes/java/main/net/yarrak/Main.class",
-        "C:/.dev/mc-modding/YarrakObama's MC-EasyMode/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-project-root/1.19.4-net.fabricmc.yarn.1_19_4.1.19.4+build.1-v2/minecraft-merged-project-root-1.19.4-net.fabricmc.yarn.1_19_4.1.19.4+build.1-v2-sources.jar",
-        "main.rs",
-        "main.go",
-        "fingerprint-mean-and-lean-windows-10-x86_64",
-    ];
-
-    println!("Input: {}", ui);
-
-    for path in paths.iter() {
-        let (ok, score) = fzf(path, ui);
-
-        if ok {
-            println!("\tMatch: '{}'\n\tScore: {}", path, score);
-        }
-    }
 }
 
 pub fn string_from_wstr(mut base: *mut u16) -> String {
