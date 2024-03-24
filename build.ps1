@@ -1,4 +1,4 @@
-cd rust-native/spear-rs
+cd rust-native
 cargo build -r
-cp target/release/spearlib.dll ../../native -Force
-cd ../..
+cp target/release/spearlib.dll ../src -Force
+cd ..
