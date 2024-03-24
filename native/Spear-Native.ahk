@@ -27,12 +27,10 @@ SetWinDelay(-1)
 ; GUI
 
 spear_gui := SpearGUI.new(
-    800,
+    950,
     700,
     20,
-    15,
-    35,
-    150
+    15
 )
 
 spear_gui.input.OnEvent("Change", auto_update_list)
