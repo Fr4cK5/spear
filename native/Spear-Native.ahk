@@ -94,8 +94,8 @@ refresh_cache(*) {
     SetTimer(() => fill_cache(), -1, 0x7fffffff)
 }
 
-spear_gui.match_path_box.OnEvent("Click", toggle_match_path)
-toggle_match_path(obj, state) {
+spear_gui.match_path_checkbox.OnEvent("Click", toggle_match_path)
+toggle_match_path(obj, _) {
     lib.set_match_path(obj.Value)
 
     while !cache_ready {
@@ -127,7 +127,7 @@ SetTimer(() => fill_cache(), -1, 0x7fffffff)
 ; Post Init Gui Update
 ; Post Init Gui Update
 
-spear_gui.match_path_box.Value := settings.matchpath
+spear_gui.match_path_checkbox.Value := settings.matchpath
 
 ; Hotkeys
 ; Hotkeys
@@ -173,6 +173,31 @@ spear_gui.match_path_box.Value := settings.matchpath
     }
 
     find(spear_gui.input.Value)
+}
+
+~*^f:: {
+    if !WinActive(spear_gui.window) {
+        return
+    }
+
+    spear_gui.input.Focus()
+}
+
+~*^l:: {
+    if !WinActive(spear_gui.window) {
+        return
+    }
+
+    spear_gui.list.Focus()
+}
+
+~*^m:: {
+    if !WinActive(spear_gui.window) {
+        return
+    }
+
+    spear_gui.match_path_checkbox.Value := !spear_gui.match_path_checkbox.Value
+    toggle_match_path(spear_gui.match_path_checkbox, 0)
 }
 
 ~Esc::hide_ui()

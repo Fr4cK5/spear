@@ -48,7 +48,7 @@ class SpearGUI {
         ; Side Buttons
 
         ; Match path checkbox
-        match_path_box := window.AddCheckbox(Format("x+m yp h{}",
+        match_path_checkbox := window.AddCheckbox(Format("x+m yp h{}",
             BUTTON_HEIGHT
         ), "Match Filepath")
 
@@ -108,7 +108,7 @@ class SpearGUI {
             select_dir: select_dir,
             refresh_cache: refresh_cache,
             new_path_label: new_path_label,
-            match_path_box: match_path_box,
+            match_path_checkbox: match_path_checkbox,
             open_config_menu: open_config_menu,
         }
     }
