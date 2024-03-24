@@ -587,6 +587,10 @@ handle_list_click(obj, info) {
     else if GetKeyState("LAlt", "P") {
         edit_file(path, mode)
     }
+
+    if GetKeyState("LAlt", "P") {
+        A_Clipboard := name
+    }
     else {
         A_Clipboard := path
     }

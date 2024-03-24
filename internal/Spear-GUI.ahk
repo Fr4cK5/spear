@@ -86,20 +86,18 @@ class SpearGUI {
         ), "")
 
         ; Current path
-        NEW_PATH_WIDTH := LEFT_SIDE_WIDTH - 1 ; I somehow saw the off-by-one-pixel and fixed it!
+        NEW_PATH_WIDTH := CONTENT_WIDTH - 1 ; I somehow saw the off-by-one-pixel and fixed it!
         new_path_label := window.AddEdit(Format("xm+1 y+{} w{} +Disabled",
             OFFSET_Y,
             NEW_PATH_WIDTH
         ), "")
-
-        credit := window.AddText(Format("x+m yp w{}",
-            RIGHT_SIDE_WIDTH
-        ), "Made by Yarrak Obama.`nBlazingly Fast!")
-        credit.SetFont("s10")
         
         return {
             WIDTH: WIDTH,
             HEIGHT: HEIGHT,
+            PADDING: PADDING,
+            BUTTON_WIDTH: BUTTON_WIDTH,
+            BUTTON_HEIGHT: BUTTON_HEIGHT,
             window: window,
             input: input,
             stats: stats,
