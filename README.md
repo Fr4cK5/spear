@@ -86,7 +86,7 @@ This has todo with the async nature of GUIs vs the blocking nature of a DllCall.
 
 # Configuration
 
-**All of this would not have been possible without GroggyOtter's JSON parsing library: `jsongo.ahk`.**
+**All of this would not have been possible without [GroggyOtter's](https://github.com/GroggyOtter) JSON parsing library: [jsongo.ahk](https://github.com/GroggyOtter/jsongo_AHKv2).**
 
 **Note: Some values contain a `{}`. This is a placeholder for a dynamically generated value. Do not remove it. Any text outside of it however can be changed.**
 
@@ -139,9 +139,13 @@ If both the files don't exist, the process will exit with an error.
 
 Thank you for your dedication to the AHK-Community.
 
+# A Screenshot cause why not?
+
+![asset/spear-in-action.png](asset/spear-in-action.png)
+
 # Possible future additions
 
-- An in-app config menu! (Needs some more GUI-redesigning)
+- An in-app config menu! (Needs some more redesigning as of right now)
 
 # Thank you
 
