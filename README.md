@@ -104,9 +104,9 @@ This has todo with the async nature of GUIs vs the blocking nature of a DllCall.
 - `native` Native library specific settings
     - `maxitemsforautoupdate` Maximum amount of items to automatically filter and update the list while typing making it feel "realtime"
     - `autofreebuffer` Automatically free the buffer and release the memory
-    - `autofreetimeout` The time (seconds) `Spear` must be in idle (on user-interaction) to automatically free the buffers
+    - `autofreetimeout` The time (seconds) `Spear` must be in idle (no user-interaction) to automatically free the buffers
 - `vim` List Vim-mode specific settings
-    - `enabled` Enable vim keybinds when the list view is in focus. This will disable the "find item via pressing the first letter of its name" feature.
+    - `enabled` Enable vim keybinds when the list view is in focus. This will mess with the "find item via pressing the first letter of its name" feature every windows ui has built-in.
     - `list_up` Keybind to go up
     - `list_down` Keybind to go down
     - `half_viewport_up` Keybind to go up half a viewport
