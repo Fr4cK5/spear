@@ -227,8 +227,6 @@ class SpearFAL {
         this.found_files := 0
         this.matching_files := 0
     }
-
-
 }
 
 /**

@@ -472,14 +472,6 @@ set_base_dir(path) {
 
     temp := Str.replaceAll(path, "\", "/")
 
-    if Str.endsWith(temp, "*") {
-        temp := Str.sub(temp, , StrLen(temp)).unwrap()
-    }
-
-    if Str.endsWith(temp, "/") {
-        temp := Str.sub(temp, , StrLen(temp)).unwrap()
-    }
-
     ; We only want to return after all the sanitizing has been done since
     ; this ensures that we're actually dealing with the same path.
     ; This way we know for sure that we don't need to re-index the whole directory structure.
