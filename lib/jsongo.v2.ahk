@@ -116,8 +116,8 @@ class jsongo {
                     else err(32, ji, '"', char)
                 case xcln: (char == ':') ? (expect := xval, ji++) : err(33, ji, ':', char)
                 case xend: (char == ',') ? (ji++, expect := (path[path.Length] is Array) ? xval : xkey)
-                    : (char == '}') ? (ji++, (path[path.Length] is Map)   ? path_pop(&char) : err(34, ji, ']', char), (path.Length = 1) ? expect := xeof : 0`)
-                    : (char == ']') ? (ji++, (path[path.Length] is Array) ? path_pop(&char) : err(35, ji, '}', char), (path.Length = 1) ? expect := xeof : 0`)
+                    : (char == '}') ? (ji++, (path[path.Length] is Map)   ? path_pop(&char) : err(34, ji, ']', char), (path.Length = 1) ? expect := xeof : 0)
+                    : (char == ']') ? (ji++, (path[path.Length] is Array) ? path_pop(&char) : err(35, ji, '}', char), (path.Length = 1) ? expect := xeof : 0)
                     : err(36, ji, '`nEnd of array: ]`nEnd of object: }`nNext value: ,`nWhitespace: [Space] [Tab] [Linefeed] [Carriage Return]', char)
                 case xeof: err(40, ji, 'End of JSON', char)
                 case xerr: return ''

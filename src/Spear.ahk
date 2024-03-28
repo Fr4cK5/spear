@@ -391,22 +391,24 @@ explorer_integration() {
         return
     }
 
-    bak := A_Clipboard
-    Sleep(50)
-    SendEvent("^l^c")
-    Sleep(50)
+    path := ""
+    for window in ComObject("Shell.Application").Windows {
+        if window.hwnd == handle {
+            path := window.Document.Folder.Self.Path
+        }
+    }
 
-    ; If the user was in This PC > Documents, Downloads, Pictures, etc...
-    ; explorer won't give us our desired path meaning this feature won't work...
-    ; Sub-folders still work though!
-    if !RegExMatch(A_Clipboard, "i)^\w:[\\/]") {
+    ; If the user was in This PC - instead of a path - we just get a CLSID ::{xxxxyyyy-zzzz-...}
+    ; here we check if the path is absolute
+    if !RegExMatch(path, "i)^\w:[\\/]") {
+        if settings.showerr {
+            TrayTip("Cannot open path of 'This PC'", "Spear", 0x13)
+        }
         return
     }
 
-    set_base_dir(A_Clipboard)
+    set_base_dir(path)
     SetTimer(() => fill_cache(), -1, 0x7fffffff)
-    Sleep(50)
-    A_Clipboard := bak
 }
 
 load_settings() {
@@ -434,6 +436,7 @@ load_settings() {
         matchignorecase: settings["matchignorecase"], ; Ignore whether the input is uppercase or lowercase
         basedir: Str.replaceOne(settings["basedir"], "{}", A_UserName), ; Starting directory
         matchpath: settings["matchpath"], ; Incoperate the path to the file to actual matching
+        showerr: settings["showerr"],
         integrations: {
             explorer: settings["integrations"]["explorer"], ; Enable the explorer integration
             editcmd: settings["integrations"]["editcmd"], ; The command to be executed when Opening a file from the UI's list via Ctrl+Left Click

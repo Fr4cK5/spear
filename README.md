@@ -70,9 +70,6 @@ git clone https://github.com/Fr4cK5/spear
     - `Clear Cache` This will clear all the cached files and directories to give the used memory back to the operating system
     - `Refresh Cache` This will refresh the cache to account for new or deleted files. When the cache is cleared but you still want to search the same directory also press this button
     - `Select Dir` Select another directory manually. As an alternative to this, you can just navigate to your desired directory and press LCtrl+LWin+L.
-        - ***NOTE*** The explorer integration feature only works in "non-library" directories. Windows library directories are "Documents", "Pictures", "This PC", ...
-        - Windows Explorer sadly doesn't print out the actual path but rather just "Documents", "Pictures", ...
-        - Any deeper nested directories eg. "C:/Users/You/Pictures/Famility Photos/" will however work
 
 - Vim-Mode
     - If you've enabled Vim-Mode, you can focus the list by pressing tab (assuming the input is currently focused.)
@@ -147,3 +144,7 @@ Thank you for your dedication to the AHK-Community.
 # Thank you
 
 Thank you for checking out my project, hope you like it!
+
+# Change Log
+
+- 28.03.2024 - (issue #1) Fixed explorer integration not working in library directories eg. "Documents", "Photos", "Desktop", ...
