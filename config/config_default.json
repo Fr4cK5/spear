@@ -14,6 +14,7 @@
     "basedir": "C:/Users/{}/Documents",
     "matchpath": false,
     "showerr": true,
+    "path_tooltip_timeout_ms": 5000,
     "native": {
         "maxitemsforautoupdate": 50000,
         "autofreebuffer": true,

@@ -3,6 +3,7 @@
 
 CoordMode("Pixel", "Screen")
 CoordMode("Mouse", "Screen")
+CoordMode("ToolTip", "Screen")
 
 #Include ../lib/v2d.v2.ahk
 #Include ../lib/viewport.v2.ahk
@@ -55,6 +56,7 @@ LIST_SELECTION_IDX := -1
 main_gui.list.OnEvent("Click", handle_list_click)
 main_gui.list.OnEvent("Focus", (*) => set_vim_binds(true))
 main_gui.list.OnEvent("LoseFocus", (*) => set_vim_binds(false))
+main_gui.list.OnEvent("LoseFocus", (*) => ToolTip())
 main_gui.list.OnEvent("ItemFocus", set_list_selection)
 set_list_selection(_, item) {
     global
@@ -252,6 +254,7 @@ vim_go_up(*) {
         return
     }
 
+    show_tooltip(main_gui.list.GetText(Max(LIST_SELECTION_IDX - 1, 1), 2), settings.path_tooltip_timeout_ms)
     ControlSend("{up}", main_gui.list)
 }
 
@@ -261,6 +264,7 @@ vim_go_down(*) {
         return
     }
 
+    show_tooltip(main_gui.list.GetText(Min(LIST_SELECTION_IDX + 1, main_gui.list.GetCount()), 2), settings.path_tooltip_timeout_ms)
     ControlSend("{down}", main_gui.list)
 }
 
@@ -336,6 +340,7 @@ hide_ui() {
     global
 
     main_gui.window.Hide()
+    ToolTip()
 
     ; setting? Clear everything upon hiding
     if settings.autoclear {
@@ -355,6 +360,20 @@ clear_ui(lib_initialized := true, preserve_stats := false) {
     else {
         main_gui.stats.Value := ""
     }
+}
+
+show_tooltip(text, timeout) {
+    vp := Viewport()
+    pos := vp.center()
+        .sub(GUI_MAIN_WIDTH / 2, 0)
+        .add(0, GUI_MAIN_HEIGHT / 2)
+
+    ToolTip(
+        text,
+        pos.x, pos.y
+    )
+
+    SetTimer(() => ToolTip(), -timeout)
 }
 
 show_centered(g, width, height) {
@@ -436,7 +455,8 @@ load_settings() {
         matchignorecase: settings["matchignorecase"], ; Ignore whether the input is uppercase or lowercase
         basedir: Str.replaceOne(settings["basedir"], "{}", A_UserName), ; Starting directory
         matchpath: settings["matchpath"], ; Incoperate the path to the file to actual matching
-        showerr: settings["showerr"],
+        showerr: settings["showerr"], ; Notify user about errors
+        path_tooltip_timeout_ms: settings["path_tooltip_timeout_ms"], ; Timeout for the tooltip showing the full path of an entry
         integrations: {
             explorer: settings["integrations"]["explorer"], ; Enable the explorer integration
             editcmd: settings["integrations"]["editcmd"], ; The command to be executed when Opening a file from the UI's list via Ctrl+Left Click

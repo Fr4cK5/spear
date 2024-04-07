@@ -125,7 +125,7 @@ class Logger {
         this.err(Format(fmt, args*))
     }
 
-    walk_obj(obj, depth := 0) {
+    walk_obj(obj, depth := 0, hashes := Map()) {
         is_primitive(value) => value is String or value is Number
 
         indent := ""
@@ -150,13 +150,12 @@ class Logger {
                 }
                 else {
                     this.dbgf(indent "{} => [Object]", i)
-                    this.walk_obj(item, depth + 1)
+                    this.walk_obj(item, depth + 1, hashes)
                 }
             }
             return
         }
 
-        static hashes := Map()
         ; Iterate over each prop / Key-Value pair
         it := obj is Map ? obj : obj.OwnProps()
         for k, v in it {
@@ -174,13 +173,13 @@ class Logger {
             if v is Array {
                 this.dbgf(indent "{} => [Array]", k)
                 hashes[v] := 1
-                this.walk_obj(v, depth + 1)
+                this.walk_obj(v, depth + 1, hashes)
             }
             ; Objects
             else if !is_primitive(v) or v is Map {
                 this.dbgf(indent "{} => [Object]", k)
                 hashes[v] := 1
-                this.walk_obj(v, depth + 1)
+                this.walk_obj(v, depth + 1, hashes)
             }
             ; Primitives (String or Number)
             else {
