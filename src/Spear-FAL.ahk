@@ -1,6 +1,7 @@
 #Include ../lib/vec.v2.ahk
 #Include ../lib/option.v2.ahk
 #Include ../lib/result.v2.ahk
+#Include ../lib/sbf/sbf.v2.ahk
 
 #Include FileHit.ahk
 
@@ -87,12 +88,6 @@ class SpearFAL {
         return this.found_files != 0
     }
 
-    as_buf_ansi(s) {
-        b := Buffer(StrLen(s))
-        written := StrPut(s, b.Ptr, StrLen(s), "cp0")
-        return b
-    }
-
     ; #[no_mangle]
     ; pub extern "C" fn walk_ff(*mut Data, usize, *mut u16, usize, *mut u16) -> usize
     ffi_walk(working_dir) {
@@ -112,8 +107,9 @@ class SpearFAL {
     }
 
     ffi_filter() {
-        this.matching_files := DllCall("spearlib\filter_ffi",
+        this.check_valid()
 
+        this.matching_files := DllCall("spearlib\filter_ffi",
             "ptr", this.data_buf.Ptr,
             "uint64", this.found_files,
 
@@ -122,6 +118,40 @@ class SpearFAL {
 
             "cdecl uint64"
         )
+    }
+
+    load_from_file(filename) {
+        obj := SBFDecoder.FileToObject(filename)
+        this.free_mem()
+        this.found_files := obj["hits"].Length
+
+        str_ptr := this.str_buf.Ptr
+        data_ptr := this.data_buf.Ptr
+
+        for i, item in obj["hits"] {
+            len := StrLen(item["path"])
+            StrPut(item["path"], str_ptr, len, "UTF-16")
+
+            NumPut("ptr", str_ptr, data_ptr)
+            NumPut("uint64", len, data_ptr + Data.len)
+            NumPut("uint64", 1, data_ptr + Data.score)
+            NumPut("uint64", item["attr"], data_ptr + Data.file_mode)
+            data_ptr += SpearFAL.SIZEOF_DATA
+
+            str_ptr += len * 2 ; UTF-16 -> 16 bits / char
+        }
+
+        return obj["path"]
+    }
+
+    write_to_file(filename, path) {
+        v := this.raw_buffer_to_vec()
+        encoder := SBFEncoder(this.str_buf.Size + this.data_buf.Size)
+        encoder.write({
+            path: path,
+            hits: v.arr(),
+        })
+        encoder.to_file(filename)
     }
 
     filtered_buffer_to_vec() {
@@ -160,7 +190,7 @@ class SpearFAL {
             base := i * SpearFAL.SIZEOF_DATA
             str_ptr := NumGet(this.data_buf, base + Data.path, "ptr")
             str_len := NumGet(this.data_buf, base + Data.len, "uint64")
-            file_mode := NumGet(this.filtered_data_buf, base + Data.file_mode, "uint64")
+            file_mode := NumGet(this.data_buf, base + Data.file_mode, "uint64")
             path := StrGet(str_ptr, str_len, "UTF-16")
             name := StrSplit(path, "/")[-1]
 

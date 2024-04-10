@@ -94,14 +94,15 @@ free_button_callback(*) {
 
 main_gui.select_dir.OnEvent("click", select_dir_callback)
 select_dir_callback(*) {
+    global
     set_base_dir(DirSelect())
-    SetTimer(() => fill_cache(), -1, 0x7fffffff)
+    fill_cache()
 }
 
 main_gui.refresh_cache.OnEvent("Click", refresh_cache)
 refresh_cache(*) {
     cache_ready := false
-    SetTimer(() => fill_cache(), -1, 0x7fffffff)
+    fill_cache()
 }
 
 main_gui.match_path_checkbox.OnEvent("Click", toggle_match_path)
@@ -148,6 +149,66 @@ open_config_menu(*) {
     config_gui.window.Destroy()
 }
 
+for i, button in main_gui.cache_buttons {
+    ; Only binding i will leave more paramaters free for the button callback
+    button.OnEvent("Click", handle_cache_load_button_click.Bind(i))
+}
+cache_file_from_idx(n) => "../cache/" n ".cache"
+check_cache_dir() {
+    if !DirExist("../cache") {
+        DirCreate("../cache")
+    }
+}
+set_cache_button_state(state) {
+    global
+    for button in main_gui.cache_buttons {
+        button.Enabled := state
+    }
+}
+handle_cache_load_button_click(i, *) {
+    global
+
+    set_cache_button_state(false)
+
+    cache_file := cache_file_from_idx(i)
+    if !FileExist(cache_file) {
+        lib.free_mem()
+        clear_ui()
+        main_gui.current_cache.Value := "Select new Dir"
+        current_cache := i
+        set_cache_button_state(true)
+        return
+    }
+
+    if i == current_cache {
+        set_cache_button_state(true)
+        return
+    }
+
+    main_gui.current_cache.Value := "Loading cache: " i
+    path := ""
+    try {
+        path := lib.load_from_file(cache_file)
+    }
+    catch { ; Cache file is corrupted
+        set_cache_button_state(true)
+        FileDelete(cache_file)
+        fill_cache()
+    }
+
+    if path != "" {
+        set_base_dir(path)
+        cache_ready := true
+    }
+
+    main_gui.current_cache.Value := "Current cache: " i
+    main_gui.stats.Value := Format("{} Files", lib.found_files)
+    main_gui.input.Enabled := true
+
+    current_cache := i
+    set_cache_button_state(true)
+}
+
 ; Init
 ; Init
 ; Init
@@ -162,8 +223,21 @@ lib.setup_settings(settings)
 
 auto_free_timer := Timer()
 is_auto_freed := false
+current_cache := 1
 
-SetTimer(() => fill_cache(), -1, 0x7fffffff)
+check_cache_dir()
+
+; If we have cached files, just load 'em
+if FileExist(cache_file_from_idx(1)) {
+    current_cache := 0
+    main_gui.input.Enabled := false
+    handle_cache_load_button_click(1)
+    cache_ready := true
+}
+else {
+    fill_cache()
+    current_cache := 1
+}
 
 ; Post Init Gui Update
 ; Post Init Gui Update
@@ -182,7 +256,7 @@ main_gui.match_path_checkbox.Value := settings.matchpath
     if is_auto_freed {
         is_auto_freed := false
         auto_free_timer.start()
-        SetTimer(() => fill_cache(), -1, 0x7fffffff)
+        fill_cache()
     }
 
     explorer_integration()
@@ -197,7 +271,7 @@ main_gui.match_path_checkbox.Value := settings.matchpath
     if is_auto_freed {
         is_auto_freed := false
         auto_free_timer.start()
-        SetTimer(() => fill_cache(), -1, 0x7fffffff)
+        fill_cache()
     }
 
     show_centered(main_gui.window, main_gui.WIDTH, main_gui.HEIGHT)
@@ -242,6 +316,14 @@ main_gui.match_path_checkbox.Value := settings.matchpath
     toggle_match_path(main_gui.match_path_checkbox, 0)
 }
 
+~*^b:: {
+    if !WinActive(main_gui.window) {
+        return
+    }
+
+    main_gui.cache_buttons[1].Focus()
+}
+
 ~Esc::hide_ui()
 
 ; Vim GUI Callbacks
@@ -269,24 +351,40 @@ vim_go_down(*) {
 }
 
 vim_half_viewport_up(*) {
+    if !main_gui.list.Focused {
+        return
+    }
+
     loop 7 {
         vim_go_up()
     }
 }
 
 vim_half_viewport_down(*) {
+    if !main_gui.list.Focused {
+        return
+    }
+
     loop 7 {
         vim_go_down()
     }
 }
 
 vim_top(*) {
+    if !main_gui.list.Focused {
+        return
+    }
+
     loop LIST_SELECTION_IDX - 1 {
         vim_go_up()
     }
 }
 
 vim_bot(*) {
+    if !main_gui.list.Focused {
+        return
+    }
+
     loop main_gui.list.GetCount() - LIST_SELECTION_IDX {
         vim_go_down()
     }
@@ -294,6 +392,10 @@ vim_bot(*) {
 
 vim_open_explorer(*) {
     global
+    if !main_gui.list.Focused {
+        return
+    }
+
     if !main_gui.list.Focused {
         return
     }
@@ -309,6 +411,10 @@ vim_edit_file(*) {
         return
     }
 
+    if !main_gui.list.Focused {
+        return
+    }
+
     path := main_gui.list.GetText(LIST_SELECTION_IDX, 2)
     mode := main_gui.list.GetText(LIST_SELECTION_IDX, 3)
     edit_file(path, mode)
@@ -320,11 +426,19 @@ vim_yank_path(*) {
         return
     }
 
+    if !main_gui.list.Focused {
+        return
+    }
+
     A_Clipboard := main_gui.list.GetText(LIST_SELECTION_IDX, 2)
 }
 
 vim_yank_name(*) {
     global
+    if !main_gui.list.Focused {
+        return
+    }
+
     if !main_gui.list.Focused {
         return
     }
@@ -427,7 +541,7 @@ explorer_integration() {
     }
 
     set_base_dir(path)
-    SetTimer(() => fill_cache(), -1, 0x7fffffff)
+    fill_cache()
 }
 
 load_settings() {
@@ -522,6 +636,18 @@ fill_cache() {
     lib.ffi_walk(base_dir)
     cache_ready := true
     main_gui.stats.Value := Format("{} Files", lib.found_files)
+
+    ; Overwrite cache
+    cache_file := cache_file_from_idx(current_cache)
+    if !FileExist(cache_file) {
+        create_file := FileOpen(cache_file, "w") ; Opening in a file in write mode creates it if necessary
+        create_file.Close()
+    }
+
+    main_gui.current_cache.Value := "Writing cache: " current_cache
+    lib.write_to_file(cache_file, base_dir)
+
+    main_gui.current_cache.Value := "Current cache: " current_cache
 }
 
 find(s) {

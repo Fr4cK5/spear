@@ -75,6 +75,46 @@ class SpearGUI {
         ;     BUTTON_HEIGHT
         ; ), "Config")
 
+        current_cache := window.AddText(Format("xp y+m w{} h{}",
+            BUTTON_WIDTH,
+            25
+        ), "Current Cache: 1")
+
+        cache_button_spacing := (BUTTON_WIDTH - BUTTON_HEIGHT * 3) / 2
+        ControlGetPos(&cache_button_x, , , , select_dir)
+
+        cache_buttons := [
+            window.AddButton(Format("xp y+m w{} h{}",
+                BUTTON_HEIGHT,
+                BUTTON_HEIGHT
+            ), "1"),
+            window.AddButton(Format("x+{} yp w{} h{}",
+                cache_button_spacing,
+                BUTTON_HEIGHT,
+                BUTTON_HEIGHT
+            ), "2"),
+            window.AddButton(Format("x+{} yp w{} h{}",
+                cache_button_spacing,
+                BUTTON_HEIGHT,
+                BUTTON_HEIGHT
+            ), "3"),
+            window.AddButton(Format("x{} y+m w{} h{}",
+                cache_button_x,
+                BUTTON_HEIGHT,
+                BUTTON_HEIGHT
+            ), "4"),
+            window.AddButton(Format("x+{} yp w{} h{}",
+                cache_button_spacing,
+                BUTTON_HEIGHT,
+                BUTTON_HEIGHT
+            ), "5"),
+            window.AddButton(Format("x+{} yp w{} h{}",
+                cache_button_spacing,
+                BUTTON_HEIGHT,
+                BUTTON_HEIGHT
+            ), "6"),
+        ]
+
         ; Bottom Section
         ; Bottom Section
         ; Bottom Section
@@ -106,8 +146,10 @@ class SpearGUI {
             list: list,
             perf: perf,
             free_button: free_button,
-            select_dir: select_dir,
             refresh_cache: refresh_cache,
+            select_dir: select_dir,
+            current_cache: current_cache,
+            cache_buttons: cache_buttons,
             new_path_label: new_path_label,
             match_path_checkbox: match_path_checkbox,
             open_config_menu: open_config_menu,

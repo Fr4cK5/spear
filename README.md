@@ -63,6 +63,7 @@ git clone https://github.com/Fr4cK5/spear
 - `LCtrl+LWin+K` Open the UI without explorer integration, regardless of your config
 - `LCtrl+F` Focus the search input
 - `LCtrl+M` Toggle path matching on the fly
+- `LCtrl+B` Focus the first cache button, use `Tab` or your `Arrowkeys` to navigate between them
 - Clicking
     - `LButton` Copy filepath to system clipboard
     - `LCtrl+LButton` Open entry in Explorer. This can be changed in the config
@@ -70,6 +71,7 @@ git clone https://github.com/Fr4cK5/spear
     - `Clear Cache` This will clear all the cached files and directories to give the used memory back to the operating system
     - `Refresh Cache` This will refresh the cache to account for new or deleted files. When the cache is cleared but you still want to search the same directory also press this button
     - `Select Dir` Select another directory manually. As an alternative to this, you can just navigate to your desired directory and press LCtrl+LWin+L.
+    - `Cache Buttons 1-6` These buttons allow you to switch between caches. The text label above them will tell you what's currently being processed / if you have to select a new directory to load into the cache. When selecting a new directory, you can either use the button above or press `LCtrl+LWin+L` in an active explorer window
 
 - Vim-Mode
     - If you've enabled Vim-Mode, you can focus the list by pressing tab (assuming the input is currently focused.)
